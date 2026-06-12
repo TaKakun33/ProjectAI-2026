@@ -23,7 +23,7 @@ CogniPace AI adalah prototype aplikasi web yang dirancang untuk membantu mahasis
 ## ✨ Fitur Utama
 
 ### 📅 Kalender Interaktif & Tabel Prioritas
-- Heatmap 5 level warna untuk memantau kepadatan deadline[cite: 6].
+- Heatmap 5 level warna untuk memantau kepadatan deadline.
 - Tabel prioritas otomatis yang mengurutkan tugas berdasarkan urgensi (kritis, mendesak, atau aman).
 
 ### 🤖 Analisis & Pemecahan Tugas (AI)
@@ -36,113 +36,40 @@ CogniPace AI adalah prototype aplikasi web yang dirancang untuk membantu mahasis
 - Menjawab berdasarkan "sumber kebenaran" dari data jadwal yang Anda unggah, sehingga meminimalkan risiko halusinasi AI.
 
 ---
-
-## 🔧 Prasyarat
-
-Pastikan semua komponen berikut sudah terpasang di komputer kamu sebelum instalasi:
-
-### 1. Python 3.10 atau lebih baru
-```bash
-python --version
-# Output: Python 3.10.x atau lebih baru
+ 
+## 🌿 Struktur Branch
+ 
+Repositori ini memiliki **dua versi aplikasi** dalam branch yang berbeda, disesuaikan dengan kebutuhan dan kondisi jaringan:
+ 
 ```
-Download: https://www.python.org/downloads/
-
-### 2. Ollama
-Ollama adalah runtime untuk menjalankan Large Language Model secara lokal.
-
-- **Windows / macOS**: Download installer dari https://ollama.com/download
-- **Linux**:
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
+ProjectAI-2026/
+├── main          ← Branch ini (README & gambaran umum proyek)
+├── ollama        ← Versi OFFLINE — AI lokal via Ollama
+└── streamlit     ← Versi ONLINE  — AI cloud via Groq API
 ```
-
-### 3. Model AI (diunduh via Ollama)
-Anda dapat memilih antara model llama3.1:8b (untuk akurasi tinggi) atau phi3 (untuk perangkat yang lebih ringan). Unduh model yang diinginkan di terminal:
-```bash
-# Untuk akurasi tinggi
-ollama pull llama3.1:8b
-
-# Untuk perangkat ringan
-ollama pull phi3
-```
-
-### 4. Git (opsional, untuk clone repo)
-Download: https://git-scm.com/downloads
-
+ 
+---
+ 
+## 🔀 Pilih Versi yang Sesuai
+ 
+| | Branch `ollama` | Branch `streamlit` |
+|---|---|---|
+| **Koneksi** | ✅ Bisa offline | 🌐 Butuh internet |
+| **AI Engine** | Ollama (lokal) | Groq API (cloud) |
+| **Model** | llama3.1:8b / phi3 / mistral | llama-3.1-8b-instant (gratis) |
+| **Kecepatan AI** | Tergantung hardware | ⚡ Sangat cepat |
+| **Setup** | Lebih panjang (install Ollama) | Lebih cepat (cukup API key) |
+| **Biaya** | Gratis sepenuhnya | Gratis (Groq free tier) |
+| **Cocok untuk** | Privasi tinggi, tanpa internet | Demo cepat, laptop low-spec |
+ 
 ---
 
-## 🚀 Instalasi
+## 📦 Branch `ollama` — Versi Offline
+ 
+Gunakan branch ini jika kamu ingin menjalankan AI **100% lokal** tanpa mengirim data ke server manapun. <br>
+➡️ Lihat **[README branch ollama](https://github.com/TaKakun33/ProjectAI-2026/blob/Ollama/README.md)** untuk panduan instalasi lengkap.
 
-### Langkah 1: Clone atau Download Repositori
+## 🌐 Akses Prototipe (Live Demo)
 
-**Menggunakan Git:**
-```bash
-git clone https://github.com/TaKakun33/ProjectAI-2026.git
-cd ProjectAI-2026
-```
-
-**Atau download ZIP** dari tombol hijau "Code" → "Download ZIP", lalu ekstrak.
-
----
-
-### Langkah 2: Buat Virtual Environment (Direkomendasikan)
-
-```bash
-# Buat virtual environment
-python -m venv venv
-
-# Aktifkan virtual environment
-# Windows:
-venv\Scripts\activate
-
-# macOS / Linux:
-source venv/bin/activate
-```
-
----
-
-### Langkah 3: Install Dependensi Python
-
-```bash
-pip install ollama streamlit pandas
-```
-
-Paket yang akan diinstall:
-
-| Paket | Versi Minimum | Fungsi |
-|-------|--------------|--------|
-| `streamlit` | 1.35.0 | Framework UI web |
-| `pandas` | 2.0.0 | Pengolahan data CSV |
-| `ollama` | 0.2.0 | Koneksi ke Ollama local LLM |
-
----
-
-### Langkah 4: Jalankan Server Ollama
-
-Buka **terminal/command prompt baru** (terpisah dari terminal aplikasi), lalu jalankan:
-
-```bash
-ollama serve
-```
-
-Biarkan terminal ini tetap terbuka selama menggunakan aplikasi.
-
-> **Catatan:** Di beberapa sistem, Ollama otomatis berjalan di background setelah instalasi. Jika perintah `ollama serve` menampilkan error "address already in use", berarti Ollama sudah berjalan dan kamu bisa langsung ke langkah berikutnya.
-
----
-
-### Langkah 5: Jalankan Aplikasi
-
-Kembali ke terminal pertama (yang sudah diaktifkan virtual environment), lalu jalankan:
-
-```bash
-streamlit run app.py
-```
-
-Aplikasi akan otomatis terbuka di browser pada alamat:
-```
-http://localhost:8501
-```
-
-ollama pull phi3
+Anda dapat mencoba aplikasi CogniPace AI secara langsung melalui web tanpa perlu melakukan instalasi di komputer Anda:
+> **🔗 [Klik di sini untuk membuka CogniPace AI](https://cognipace.streamlit.app)**

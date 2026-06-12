@@ -16,10 +16,10 @@ import streamlit.components.v1 as components
 from datetime import date, timedelta
 
 try:
-    import ollama
-    OLLAMA_TERSEDIA = True
+    from groq import Groq
+    AI_TERSEDIA = True
 except ImportError:
-    OLLAMA_TERSEDIA = False
+    AI_TERSEDIA = False
 
 
 # ═══════════════════════════════════════════════
@@ -27,10 +27,11 @@ except ImportError:
 # ═══════════════════════════════════════════════
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 
-# Daftar model yang direkomendasikan
+# Daftar model yang direkomendasikan (Groq)
 MODEL_OPTIONS = [
-    "llama3.1:8b",   # Terbaik untuk instruksi
-    "phi3",          # Paling ringan
+    "llama-3.3-70b-versatile",     # Terbaik & paling pintar
+    "llama-3.1-8b-instant",        # Tercepat & paling hemat
+    "gemma2-9b-it",                # Alternatif ringan dari Google
 ]
 
 # ═══════════════════════════════════════════════
@@ -75,7 +76,7 @@ def deteksi_kolom(df: pd.DataFrame) -> dict:
                 mapping[internal] = col
     return mapping
 
-def parse_tgl(s: str, tahun_default: int = None) -> date | None:
+def parse_tgl(s: str, tahun_default: int = None) -> "date | None":
     if tahun_default is None: tahun_default = date.today().year
     s = str(s).strip()
     parts = s.replace(",", " ").split()
@@ -257,12 +258,17 @@ Tugas paling berat/menantang dari data di atas adalah [Nama Tugas]. Mulailah men
 3. [tip konkret ketiga]
 </tips>"""
 
-    response = ollama.chat(
+    api_key = st.secrets.get("GROQ_API_KEY", "")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY belum diset di Streamlit Secrets.")
+
+    client = Groq(api_key=api_key)
+    message = client.chat.completions.create(
         model=model,
+        max_tokens=1000,
         messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0.4},   # Sedikit dinaikkan agar pemecahan tugas lebih bervariasi
     )
-    return response["message"]["content"]
+    return message.choices[0].message.content
 
 
 def parse_ai_teks(teks: str) -> dict:
@@ -306,7 +312,7 @@ def bangun_konteks_jadwal(df_jadwal: pd.DataFrame) -> str:
 
 def panggil_chatbot(riwayat: list, pesan_baru: str, konteks_jadwal: str, model: str) -> str:
     """
-    Kirim pesan ke Ollama dengan konteks jadwal sebagai sistem prompt.
+    Kirim pesan ke Groq API dengan konteks jadwal sebagai sistem prompt.
     riwayat: list of dict {"role": "user"/"assistant", "content": "..."}
     """
     hari_ini = date.today().strftime("%A, %d %B %Y")
@@ -323,17 +329,22 @@ Jangan mengarang informasi di luar data jadwal yang diberikan.
 Gunakan data di atas untuk menjawab pertanyaan spesifik tentang tugas, deadline, dan prioritas.
 Jika pertanyaan tidak berkaitan dengan data jadwal, jawab sesuai pengetahuan umummu tentang tips belajar."""
 
+    api_key = st.secrets.get("GROQ_API_KEY", "")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY belum diset di Streamlit Secrets.")
+
+    client = Groq(api_key=api_key)
     messages = [{"role": "system", "content": system_prompt}]
     for msg in riwayat:
         messages.append({"role": msg["role"], "content": msg["content"]})
     messages.append({"role": "user", "content": pesan_baru})
 
-    response = ollama.chat(
+    response = client.chat.completions.create(
         model=model,
+        max_tokens=1000,
         messages=messages,
-        options={"temperature": 0.5},
     )
-    return response["message"]["content"]
+    return response.choices[0].message.content
 
 
 def tampilkan_chatbot(df_jadwal: pd.DataFrame, model: str):
@@ -372,10 +383,10 @@ def tampilkan_chatbot(df_jadwal: pd.DataFrame, model: str):
     pesan_user = st.chat_input("Tanya tentang jadwal atau tipsmu…", key="chat_input")
 
     if pesan_user:
-        if not OLLAMA_TERSEDIA:
+        if not AI_TERSEDIA:
             st.warning(
-                "⚠️ Library `ollama` tidak ditemukan. "
-                "Jalankan `pip install ollama` lalu restart aplikasi."
+                "⚠️ Library `groq` tidak ditemukan. "
+                "Jalankan `pip install groq` lalu restart aplikasi."
             )
             return
 
@@ -405,7 +416,7 @@ def tampilkan_chatbot(df_jadwal: pd.DataFrame, model: str):
                     err_msg = str(e)
                     st.warning(
                         f"⚠️ Chatbot tidak bisa menjawab saat ini. "
-                        f"Pastikan Ollama berjalan (`ollama serve`). "
+                        f"Pastikan GROQ_API_KEY sudah diset di Streamlit Secrets. "
                         f"Detail: {err_msg[:120]}"
                     )
 
@@ -597,15 +608,16 @@ render();
 with st.sidebar:
     st.header("⚙️ Pengaturan AI")
     model_pilihan = st.selectbox(
-        "Model Ollama",
+        "Model Groq",
         options=MODEL_OPTIONS,
         index=0,
         help="llama3.1:8b paling bagus. phi3 paling ringan tapi sering gagal JSON.",
     )
     st.caption(
         """**Rekomendasi:**
-- `llama3.1:8b` — terbaik, ~5GB
-- `phi3` — ringan, ~2.3GB (kadang tidak konsisten)
+- `llama-3.3-70b-versatile` — terbaik & pintar
+- `llama-3.1-8b-instant` — tercepat & hemat
+- `gemma2-9b-it` — alternatif ringan
 ```"""
     )
     st.divider()
@@ -664,8 +676,8 @@ if uploaded_file is not None:
         ai_hasil = {"skor": None, "ringkasan": "", "fokus": "", "tips": ""}
         ai_error = None
 
-        if not OLLAMA_TERSEDIA:
-            ai_error = "Library `ollama` tidak ditemukan. `pip install ollama`"
+        if not AI_TERSEDIA:
+            ai_error = "Library `groq` tidak ditemukan. `pip install groq`"
         else:
             with st.spinner(f"🤖 AI ({model_pilihan}) menganalisis... (~10-20 detik)"):
                 try:

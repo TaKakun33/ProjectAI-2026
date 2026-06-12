@@ -1,13 +1,3 @@
-"""
-CogniPace AI v4 — Arsitektur Hybrid yang Andal
-================================================
-Strategi:
-  - PYTHON  → kalender, tabel prioritas, jadwal harian (100% deterministik, selalu berhasil)
-  - AI (opsional) → skor beban kognitif, ringkasan analisis, tips manajemen waktu, pemecahan tugas
-  AI hanya diminta teks pendek via tag sederhana — tidak ada JSON kompleks.
-  Kalender & jadwal tetap muncul meski AI offline / gagal.
-"""
-
 import re
 import json
 import streamlit as st
@@ -21,10 +11,7 @@ try:
 except ImportError:
     AI_TERSEDIA = False
 
-
-# ═══════════════════════════════════════════════
 # KONFIGURASI
-# ═══════════════════════════════════════════════
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 
 # Daftar model yang direkomendasikan (Groq)
@@ -34,9 +21,7 @@ MODEL_OPTIONS = [
     "gemma2-9b-it",                # Alternatif ringan dari Google
 ]
 
-# ═══════════════════════════════════════════════
 # BAGIAN 1: DETEKSI KOLOM & PARSING DATA
-# ═══════════════════════════════════════════════
 
 ALIAS_KOLOM = {
     "nama tugas":    "tugas", "nama tugas (simulasi)": "tugas",
@@ -142,10 +127,7 @@ def proses_df(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
 
     return df
 
-
-# ═══════════════════════════════════════════════
 # BAGIAN 2: PYTHON → KALENDER, TABEL, JADWAL
-# ═══════════════════════════════════════════════
 
 def bangun_beban(df: pd.DataFrame) -> dict:
     beban = {}
@@ -224,9 +206,7 @@ def bangun_jadwal_harian(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(jadwal)
 
 
-# ═══════════════════════════════════════════════
 # BAGIAN 3: AI — HANYA UNTUK ANALISIS TEKS
-# ═══════════════════════════════════════════════
 
 def panggil_ai_analisis(csv_str: str, kolom_info: str, model: str) -> str:
     """ AI menganalisis teks dengan tambahan pemecahan tugas (fokus) via tag XML. """
@@ -291,9 +271,8 @@ def parse_ai_teks(teks: str) -> dict:
     }
 
 
-# ═══════════════════════════════════════════════
+
 # BAGIAN 4: CHATBOT ASISTEN AKADEMIK
-# ═══════════════════════════════════════════════
 
 def bangun_konteks_jadwal(df_jadwal: pd.DataFrame) -> str:
     """Ubah df_jadwal menjadi teks konteks yang ringkas untuk prompt chatbot."""
@@ -427,9 +406,7 @@ def tampilkan_chatbot(df_jadwal: pd.DataFrame, model: str):
             st.rerun()
 
 
-# ═══════════════════════════════════════════════
 # BAGIAN 5: KALENDER HTML+JS INTERAKTIF
-# ═══════════════════════════════════════════════
 
 def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int) -> str:
     return f"""<!DOCTYPE html>
@@ -600,9 +577,7 @@ render();
 </body></html>"""
 
 
-# ═══════════════════════════════════════════════
 # TAMPILAN UTAMA
-# ═══════════════════════════════════════════════
 
 # ── Sidebar: pilih model ──────────────────────────────────────────────────────
 with st.sidebar:
@@ -718,9 +693,8 @@ if uploaded_file is not None:
         ai_error    = _h["ai_error"]
         total_aktif = _h["total_aktif"]
 
-        # ════════════════════════════════════════
+      
         # OUTPUT (sebelumnya di dalam button, sekarang di luar)
-        # ════════════════════════════════════════
 
         # ── Metrik ───────────────────────────────────────────────────────────
         total_padat = sum(1 for v in beban_dict.values() if v["jumlah"] >= 3)
@@ -850,4 +824,4 @@ if uploaded_file is not None:
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.divider()
-st.caption("🧠 CogniPace AI v4")
+st.caption("🧠 CogniPace AI")

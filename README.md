@@ -79,7 +79,33 @@ ALASAN PEMILIHAN TEKNOLOGI
 
 CARA MENJALANKAN LOKAL
 ===============================
+## 🔧 Prasyarat
+Pastikan semua komponen berikut sudah terpasang di komputer kamu sebelum instalasi:
+### 1. Python 3.10 atau lebih baru
+```bash
+python --version
+# Output: Python 3.10.x atau lebih baru
+```
+Download: https://www.python.org/downloads/
 
+### 2. Ollama
+Ollama adalah runtime untuk menjalankan Large Language Model secara lokal.
+- **Windows / macOS**: Download installer dari https://ollama.com/download
+- **Linux**:
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+### 3. Model AI (diunduh via Ollama)
+Anda dapat memilih antara model llama3.1:8b (untuk akurasi tinggi) atau phi3 (untuk perangkat yang lebih ringan). Unduh model yang diinginkan di terminal:
+```bash
+# Untuk perangkat ringan
+ollama pull phi3
+
+# Untuk akurasi tinggi
+ollama pull llama3.1:8b
+```
+
+## 🚀 Instalasi
 ### Langkah 1: Clone atau Download Repositori
 
 **Menggunakan Git:**
@@ -150,8 +176,6 @@ Aplikasi akan otomatis terbuka di browser pada alamat:
 ```
 http://localhost:8501
 ```
-
-ollama pull phi3
 
 
 BATASAN PROTOTYPE

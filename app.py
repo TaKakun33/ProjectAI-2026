@@ -1,15 +1,11 @@
 """
-CogniPace AI — Asisten Manajemen Beban Kognitif Mahasiswa
-==========================================================
-Arsitektur baru (v3):
-  1. CSV diunggah → semua kolom dikirim ke AI apa adanya
-  2. AI menganalisis → mengembalikan JSON terstruktur:
-       - skor beban kognitif
-       - daftar tugas dengan tanggal yang sudah dinormalisasi
-       - jadwal harian prioritas
-       - tips & analisis
-  3. JSON dari AI dirender menjadi kalender interaktif + tabel prioritas
-  → Kalender & tabel 100% berdasarkan hasil analisis AI
+CogniPace AI v4 — Arsitektur Hybrid yang Andal
+================================================
+Strategi:
+  - PYTHON  → kalender, tabel prioritas, jadwal harian (100% deterministik, selalu berhasil)
+  - AI (opsional) → skor beban kognitif, ringkasan analisis, tips manajemen waktu
+  AI hanya diminta teks pendek via tag sederhana — tidak ada JSON kompleks.
+  Kalender & jadwal tetap muncul meski AI offline / gagal.
 """
 
 import re
@@ -17,7 +13,7 @@ import json
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
-from datetime import date
+from datetime import date, timedelta
 
 try:
     import ollama
@@ -26,19 +22,46 @@ except ImportError:
     OLLAMA_TERSEDIA = False
 
 
-# ─────────────────────────────────────────────
-# KONFIGURASI HALAMAN
-# ─────────────────────────────────────────────
-st.set_page_config(
-    page_title="CogniPace AI",
-    page_icon="🧠",
-    layout="wide",
-)
+# ═══════════════════════════════════════════════
+# KONFIGURASI
+# ═══════════════════════════════════════════════
+st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 
+# Daftar model yang direkomendasikan (diurutkan dari terbaik ke ringan)
+MODEL_OPTIONS = [
+    "llama3.1:8b",   # Terbaik untuk instruksi
+    "phi3",          # Paling ringan
+]
 
 # ═══════════════════════════════════════════════
-# BAGIAN 1: PARSER TANGGAL INDONESIA
+# BAGIAN 1: DETEKSI KOLOM & PARSING DATA
 # ═══════════════════════════════════════════════
+
+ALIAS_KOLOM = {
+    # Nama tugas
+    "nama tugas":    "tugas", "nama tugas (simulasi)": "tugas",
+    "tugas":         "tugas", "assignment": "tugas", "task": "tugas",
+    "kerjaan":       "tugas", "pekerjaan":  "tugas", "kegiatan": "tugas",
+    # Mata kuliah
+    "mata kuliah":   "matkul","matkul":     "matkul","subject":  "matkul",
+    "course":        "matkul","pelajaran":  "matkul","mapel":    "matkul",
+    "kelas":         "matkul",
+    # Deadline
+    "deadline":      "deadline","due date":  "deadline","due_date": "deadline",
+    "batas waktu":   "deadline","tanggal akhir":"deadline",
+    "tanggal deadline":"deadline","tgl deadline":"deadline",
+    "jatuh tempo":   "deadline","akhir":     "deadline",
+    # Prioritas
+    "prioritas":     "prioritas","priority":  "prioritas",
+    # Estimasi/durasi
+    "estimasi waktu":"estimasi","estimasi":  "estimasi","durasi":  "estimasi",
+    "estimated time":"estimasi","time":      "estimasi",
+    # Status
+    "status":        "status",  "kondisi":   "status","state":   "status",
+    # Tanggal mulai (opsional)
+    "tanggal diberikan":"tgl_mulai","tanggal mulai":"tgl_mulai",
+    "mulai":         "tgl_mulai","start":    "tgl_mulai",
+}
 
 BULAN_ID = {
     "januari":1,"februari":2,"maret":3,"april":4,"mei":5,"juni":6,
@@ -49,601 +72,507 @@ BULAN_ID = {
     "august":8,"october":10,"december":12,
 }
 
-def parse_tanggal(s: str, tahun_default: int = None) -> str | None:
-    """
-    Menerima string tanggal dalam berbagai format (termasuk '15 Juni')
-    dan mengembalikan string ISO YYYY-MM-DD, atau None jika gagal.
-    Tahun default = tahun berjalan jika tidak disebutkan.
-    """
-    if not tahun_default:
+
+def deteksi_kolom(df: pd.DataFrame) -> dict:
+    """Mengembalikan mapping {nama_internal: nama_kolom_asli}."""
+    mapping = {}
+    for col in df.columns:
+        key = col.strip().lower()
+        if key in ALIAS_KOLOM:
+            internal = ALIAS_KOLOM[key]
+            if internal not in mapping:          # ambil yang pertama cocok
+                mapping[internal] = col
+    return mapping
+
+
+def parse_tgl(s: str, tahun_default: int = None) -> date | None:
+    """Parse berbagai format tanggal → date object. None jika gagal."""
+    if tahun_default is None:
         tahun_default = date.today().year
-
     s = str(s).strip()
+    # Coba nama bulan Indonesia/Inggris
     parts = s.replace(",", " ").split()
-
-    # Coba manual (nama bulan Indonesia / Inggris)
-    if len(parts) >= 2:
-        for i, p in enumerate(parts):
-            bulan_num = BULAN_ID.get(p.lower())
-            if bulan_num:
-                others = [x for j, x in enumerate(parts) if j != i]
-                for o in others:
-                    try:
-                        hari = int(o)
-                        tahun = tahun_default
-                        for o2 in others:
-                            try:
-                                y = int(o2)
-                                if 2020 <= y <= 2035:
-                                    tahun = y
-                                    break
-                            except:
-                                pass
-                        return f"{tahun:04d}-{bulan_num:02d}-{hari:02d}"
-                    except:
-                        pass
-
-    # Fallback pandas untuk format numerik
+    for i, p in enumerate(parts):
+        bln = BULAN_ID.get(p.lower())
+        if bln:
+            others = [x for j, x in enumerate(parts) if j != i]
+            for o in others:
+                try:
+                    hr = int(o)
+                    thn = tahun_default
+                    for o2 in others:
+                        try:
+                            yy = int(o2)
+                            if 2020 <= yy <= 2035:
+                                thn = yy; break
+                        except: pass
+                    return date(thn, bln, hr)
+                except: pass
+    # Fallback pandas (numerik)
     try:
         r = pd.to_datetime(s, format="mixed", dayfirst=True, errors="raise")
         if r.year >= 2020:
-            return r.strftime("%Y-%m-%d")
-    except:
-        pass
-
+            return r.date()
+    except: pass
+    # Coba ambil tanggal dari string ISO yang mungkin ada timestamp (2026-06-15T18:00:00Z)
+    iso_match = re.match(r"(\d{4}-\d{2}-\d{2})", s)
+    if iso_match:
+        try:
+            return date.fromisoformat(iso_match.group(1))
+        except: pass
     return None
 
 
-# ═══════════════════════════════════════════════
-# BAGIAN 2: PANGGIL AI — ARSITEKTUR BARU
-# AI menerima CSV mentah dan mengembalikan JSON penuh
-# ═══════════════════════════════════════════════
-
-SCHEMA_JSON = """{
-  "skor_beban": <angka 1-10>,
-  "ringkasan": "<analisis singkat kondisi beban mahasiswa>",
-  "tips": [
-    "<tip manajemen waktu 1>",
-    "<tip manajemen waktu 2>",
-    "<tip manajemen waktu 3>"
-  ],
-  "tugas": [
-    {
-      "nama_tugas": "<nama tugas>",
-      "matkul": "<nama mata kuliah atau kategori, tulis '-' jika tidak ada>",
-      "deadline_iso": "<tanggal deadline format YYYY-MM-DD>",
-      "prioritas": "<Tinggi / Sedang / Rendah>",
-      "estimasi_jam": <angka jam pengerjaan, perkirakan jika tidak ada>,
-      "status": "<Belum Selesai / Selesai>"
-    }
-  ],
-  "jadwal_harian": [
-    {
-      "hari_ke": <nomor urut hari>,
-      "tanggal": "<YYYY-MM-DD>",
-      "nama_tugas": "<nama tugas yang dikerjakan hari ini>",
-      "matkul": "<mata kuliah>",
-      "durasi_jam": <jam>,
-      "catatan": "<tips spesifik pengerjaan>"
-    }
-  ]
-}"""
+def parse_jam(s) -> int:
+    """Ekstrak angka jam dari string seperti '6 Jam', '4h', '3'. Default 2."""
+    if pd.isna(s): return 2
+    nums = re.findall(r'\d+', str(s))
+    return int(nums[0]) if nums else 2
 
 
-def panggil_ollama(csv_string: str, kolom_info: str) -> str:
+BOBOT_PRI = {
+    "tinggi": 0, "high": 0, "kritis": 0,
+    "sedang": 1, "medium": 1, "normal": 1,
+    "rendah": 2, "low": 2, "ringan": 2,
+}
+
+
+def proses_df(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
     """
-    Mengirim seluruh CSV ke AI dan meminta JSON terstruktur lengkap.
-    AI bertanggung jawab:
-      - Menormalisasi semua tanggal ke ISO format
-      - Menentukan prioritas jika belum ada
-      - Membuat jadwal harian yang logis
-      - Menghitung skor beban
+    Menambahkan kolom internal ke DataFrame:
+      _deadline, _hari_tersisa, _jam, _bobot_pri, _skor, _prioritas, _tugas, _matkul, _status
     """
-    hari_ini = date.today().strftime("%Y-%m-%d")
+    today = date.today()
+    df = df.copy()
 
-    prompt = f"""Kamu adalah AI Asisten Akademik yang sangat teliti. Hari ini tanggal {hari_ini}.
+    # Deadline
+    if "deadline" in mapping:
+        df["_deadline"] = df[mapping["deadline"]].apply(parse_tgl)
+    else:
+        df["_deadline"] = None
 
-Data tugas mahasiswa dari file CSV:
-Kolom yang tersedia: {kolom_info}
+    df["_hari_tersisa"] = df["_deadline"].apply(
+        lambda d: (d - today).days if d else 9999
+    )
 
-DATA CSV:
-{csv_string}
+    # Estimasi jam
+    df["_jam"] = df[mapping["estimasi"]].apply(parse_jam) if "estimasi" in mapping else 2
 
-TUGASMU:
-Analisis semua tugas di atas dan kembalikan HANYA satu objek JSON valid, tanpa teks lain, tanpa markdown, tanpa penjelasan apapun di luar JSON.
+    # Prioritas
+    if "prioritas" in mapping:
+        df["_bobot_pri"] = df[mapping["prioritas"]].apply(
+            lambda x: BOBOT_PRI.get(str(x).lower().strip(), 1)
+        )
+        df["_prioritas"] = df[mapping["prioritas"]].apply(
+            lambda x: str(x).strip()
+        )
+    else:
+        df["_bobot_pri"] = 1
+        df["_prioritas"] = "Sedang"
 
-PENTING:
-1. Konversi semua tanggal ke format ISO YYYY-MM-DD. Jika tahun tidak disebutkan, gunakan tahun {date.today().year}.
-2. Untuk setiap tugas, tentukan status (Belum Selesai / Selesai) berdasarkan data. Jika tidak ada info status, anggap "Belum Selesai".
-3. Buat jadwal_harian yang realistis, dimulai dari hari ini ({hari_ini}), satu tugas per hari (atau lebih jika tugas ringan), selesai sebelum deadline masing-masing.
-4. Urutkan tugas_harian berdasarkan deadline terdekat dan prioritas tertinggi.
-5. Skor beban 1-10: perhatikan jumlah tugas, estimasi waktu total, dan kepadatan deadline.
+    # Skor prioritas (lebih kecil = lebih urgent)
+    df["_skor"] = df["_hari_tersisa"] + df["_bobot_pri"] * 2
 
-Format JSON yang HARUS kamu kembalikan (isi sesuai data):
-{SCHEMA_JSON}
+    # Kolom display
+    df["_tugas"]  = df[mapping["tugas"]].apply(str)  if "tugas"  in mapping else "Tugas"
+    df["_matkul"] = df[mapping["matkul"]].apply(str) if "matkul" in mapping else "—"
 
-Ingat: kembalikan HANYA JSON murni, tidak ada teks lain sama sekali."""
+    # Status — filter aktif
+    if "status" in mapping:
+        selesai_kata = {"selesai","done","complete","completed","finished","sudah"}
+        df["_selesai"] = df[mapping["status"]].apply(
+            lambda x: str(x).lower().strip() in selesai_kata
+        )
+    else:
+        df["_selesai"] = False   # anggap semua belum selesai
+
+    return df
+
+
+# ═══════════════════════════════════════════════
+# BAGIAN 2: PYTHON → KALENDER, TABEL, JADWAL
+# ═══════════════════════════════════════════════
+
+def bangun_beban(df: pd.DataFrame) -> dict:
+    """
+    Bangun dict beban kalender dari DataFrame yang sudah diproses.
+    { "YYYY-MM-DD": { "jumlah": N, "tugas": [{...}] } }
+    Semua tugas ditampilkan di kalender (termasuk yang selesai, dibedakan warna di modal).
+    """
+    beban = {}
+    for _, r in df.iterrows():
+        if r["_deadline"] is None:
+            continue
+        key = str(r["_deadline"])
+        if key not in beban:
+            beban[key] = {"jumlah": 0, "tugas": []}
+        beban[key]["jumlah"] += 1
+        beban[key]["tugas"].append({
+            "tugas":       r["_tugas"],
+            "matkul":      r["_matkul"],
+            "deadline":    key,
+            "prioritas":   r["_prioritas"],
+            "estimasi_jam":r["_jam"],
+            "status":      "Selesai" if r["_selesai"] else "Belum Selesai",
+        })
+    return beban
+
+
+def bangun_tabel_prioritas(df: pd.DataFrame) -> pd.DataFrame:
+    """Tabel prioritas — hanya tugas belum selesai, urut dari paling urgent."""
+    df_aktif = df[~df["_selesai"] & (df["_deadline"].notna())].copy()
+    if df_aktif.empty:
+        return pd.DataFrame()
+
+    df_aktif = df_aktif.sort_values("_skor").reset_index(drop=True)
+    df_aktif.index += 1
+
+    def urgensi(hari):
+        if hari < 0:     return "🔴 Terlambat"
+        elif hari <= 2:  return "🔴 Kritis"
+        elif hari <= 5:  return "🟠 Mendesak"
+        elif hari <= 10: return "🟡 Perhatikan"
+        else:            return "🟢 Aman"
+
+    kolom = {}
+    if "_tugas"  in df_aktif.columns: kolom["_tugas"]  = "Nama Tugas"
+    if "_matkul" in df_aktif.columns: kolom["_matkul"] = "Mata Kuliah"
+
+    df_out = pd.DataFrame()
+    for k, v in kolom.items():
+        df_out[v] = df_aktif[k].values
+
+    df_out["Deadline"]      = df_aktif["_deadline"].apply(
+        lambda d: d.strftime("%d %b %Y") if d else "—"
+    ).values
+    df_out["Hari Tersisa"]  = df_aktif["_hari_tersisa"].apply(
+        lambda h: h if h != 9999 else "?"
+    ).values
+    df_out["Prioritas"]     = df_aktif["_prioritas"].values
+    df_out["Estimasi"]      = df_aktif["_jam"].apply(lambda j: f"{j} jam").values
+    df_out["Urgensi"]       = df_aktif["_hari_tersisa"].apply(urgensi).values
+    df_out.index = range(1, len(df_out) + 1)
+    return df_out
+
+
+def bangun_jadwal_harian(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Generate jadwal harian dari Python murni:
+    - Mulai dari hari ini
+    - Urutkan berdasarkan skor prioritas
+    - 1 tugas per hari (2 tugas jika total jam hari itu ≤ 5)
+    - Sisipkan peringatan jika ada deadline yang terlewat
+    """
+    df_aktif = df[~df["_selesai"] & (df["_deadline"].notna())].sort_values("_skor").copy()
+    if df_aktif.empty:
+        return pd.DataFrame()
+
+    today = date.today()
+    jadwal = []
+    hari = today
+    max_jam_per_hari = 6   # batas jam kerja per hari
+
+    for _, r in df_aktif.iterrows():
+        dl = r["_deadline"]
+        jam = r["_jam"]
+        hari_tersisa = r["_hari_tersisa"]
+
+        # Jika deadline sudah lewat, tandai dengan ⚠️
+        if hari_tersisa < 0:
+            catatan = "⚠️ Deadline sudah terlewat! Selesaikan sesegera mungkin."
+            tgl_kerjakan = today
+        elif hari_tersisa == 0:
+            catatan = "🚨 Deadline HARI INI! Prioritaskan sekarang."
+            tgl_kerjakan = today
+        elif hari_tersisa <= 2:
+            catatan = f"🔴 Deadline {dl.strftime('%d %b')} — kerjakan sekarang!"
+            tgl_kerjakan = hari
+        else:
+            catatan = f"Selesaikan sebelum {dl.strftime('%d %b %Y')}"
+            tgl_kerjakan = hari
+            hari += timedelta(days=1)
+
+        jadwal.append({
+            "Tanggal Kerjakan": tgl_kerjakan.strftime("%d %b %Y (%a)"),
+            "Nama Tugas":       r["_tugas"],
+            "Mata Kuliah":      r["_matkul"],
+            "Prioritas":        r["_prioritas"],
+            "Estimasi":         f"{jam} jam",
+            "Deadline":         dl.strftime("%d %b %Y"),
+            "Catatan":          catatan,
+        })
+
+    return pd.DataFrame(jadwal)
+
+
+# ═══════════════════════════════════════════════
+# BAGIAN 3: AI — HANYA UNTUK ANALISIS TEKS
+# Diminta 3 hal sederhana via tag XML, bukan JSON
+# ═══════════════════════════════════════════════
+
+def panggil_ai_analisis(csv_str: str, kolom_info: str, model: str) -> str:
+    """
+    AI hanya diminta menganalisis teks dan mengembalikan 3 hal via tag XML:
+      <skor>angka</skor>
+      <ringkasan>teks</ringkasan>
+      <tips>teks</tips>
+    Jauh lebih reliabel dibanding meminta JSON kompleks.
+    """
+    hari_ini = date.today().strftime("%d %B %Y")
+    prompt = f"""Kamu adalah AI Asisten Akademik. Hari ini {hari_ini}.
+
+Data tugas mahasiswa:
+{csv_str}
+
+Kolom data: {kolom_info}
+
+Berikan analisis singkat dalam Bahasa Indonesia. Jawab HANYA dengan format berikut, tidak ada teks lain:
+
+<skor>[angka 1-10, di mana 10=sangat berat]</skor>
+
+<ringkasan>[2-3 kalimat analisis kondisi beban mahasiswa berdasarkan data di atas]</ringkasan>
+
+<tips>
+1. [tip konkret pertama]
+2. [tip konkret kedua]
+3. [tip konkret ketiga]
+</tips>"""
 
     response = ollama.chat(
-        model="phi3",
+        model=model,
         messages=[{"role": "user", "content": prompt}],
+        options={"temperature": 0.3},   # lebih deterministik
     )
     return response["message"]["content"]
 
 
-def bersihkan_dan_parse_json(teks: str) -> dict | None:
-    """
-    Membersihkan respons AI dan mem-parse JSON.
-    Mencoba beberapa strategi jika JSON tidak sempurna.
-    """
-    if not teks:
-        return None
+def parse_ai_teks(teks: str) -> dict:
+    """Parse tag XML sederhana dari respons AI."""
+    def ekstrak(tag):
+        m = re.search(rf"<{tag}>(.*?)</{tag}>", teks, re.DOTALL | re.IGNORECASE)
+        return m.group(1).strip() if m else ""
 
-    # Hapus markdown code block jika ada
-    teks = re.sub(r"```json\s*", "", teks)
-    teks = re.sub(r"```\s*", "", teks)
-    teks = teks.strip()
-
-    # Coba parse langsung
+    skor_str = ekstrak("skor")
     try:
-        return json.loads(teks)
-    except json.JSONDecodeError:
-        pass
+        skor = max(1, min(10, int(float(re.sub(r"[^\d.]", "", skor_str)))))
+    except:
+        skor = None
 
-    # Coba ekstrak JSON dari dalam teks (jika ada teks di luar JSON)
-    pola = r'\{.*\}'
-    match = re.search(pola, teks, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    return None
-
-
-# ═══════════════════════════════════════════════
-# BAGIAN 3: BANGUN DATA KALENDER DARI JSON AI
-# ═══════════════════════════════════════════════
-
-def bangun_beban_dari_ai(data_ai: dict) -> dict:
-    """
-    Mengubah list tugas dari JSON AI menjadi dict beban kalender:
-    { "YYYY-MM-DD": { "jumlah": N, "tugas": [...] } }
-    """
-    beban = {}
-    tugas_list = data_ai.get("tugas", [])
-
-    for t in tugas_list:
-        # Gunakan deadline_iso dari AI, atau coba parse ulang
-        deadline_raw = t.get("deadline_iso", "") or t.get("deadline", "")
-        deadline_str = parse_tanggal(deadline_raw)
-
-        if not deadline_str:
-            continue  # Skip tugas tanpa deadline valid
-
-        status = t.get("status", "Belum Selesai")
-        # Tampilkan semua tugas di kalender (termasuk yang selesai, tapi bedakan visual)
-        if deadline_str not in beban:
-            beban[deadline_str] = {"jumlah": 0, "tugas": []}
-
-        beban[deadline_str]["jumlah"] += 1
-        beban[deadline_str]["tugas"].append({
-            "tugas": t.get("nama_tugas", "Tugas"),
-            "matkul": t.get("matkul", "—"),
-            "deadline": deadline_str,
-            "prioritas": t.get("prioritas", "Sedang"),
-            "estimasi_jam": t.get("estimasi_jam", "?"),
-            "status": status,
-        })
-
-    return beban
-
-
-def bangun_tabel_prioritas(data_ai: dict) -> pd.DataFrame:
-    """
-    Membangun tabel prioritas dari list tugas JSON AI.
-    Hanya tugas belum selesai, diurutkan: prioritas tinggi + deadline terdekat.
-    """
-    tugas_list = data_ai.get("tugas", [])
-    if not tugas_list:
-        return pd.DataFrame()
-
-    today = date.today()
-    rows = []
-
-    BOBOT_PRIORITAS = {"Tinggi": 0, "High": 0, "Sedang": 1, "Medium": 1, "Rendah": 2, "Low": 2}
-
-    for t in tugas_list:
-        status = t.get("status", "Belum Selesai")
-        if status.lower() in {"selesai", "done", "complete", "completed"}:
-            continue  # Skip tugas selesai dari tabel prioritas
-
-        deadline_raw = t.get("deadline_iso", "") or t.get("deadline", "")
-        deadline_str = parse_tanggal(deadline_raw)
-
-        if deadline_str:
-            try:
-                d = date.fromisoformat(deadline_str)
-                hari_tersisa = (d - today).days
-                deadline_display = d.strftime("%d %b %Y")
-            except:
-                hari_tersisa = 999
-                deadline_display = deadline_raw
-        else:
-            hari_tersisa = 999
-            deadline_display = deadline_raw
-
-        def label_urgensi(hari):
-            if hari < 0:    return "🔴 Terlambat"
-            elif hari <= 2: return "🔴 Kritis"
-            elif hari <= 5: return "🟠 Mendesak"
-            elif hari <= 10: return "🟡 Perhatikan"
-            else:           return "🟢 Aman"
-
-        prioritas = t.get("prioritas", "Sedang")
-        bobot = BOBOT_PRIORITAS.get(prioritas, 1)
-        # Skor: hari_tersisa dikurangi bobot prioritas (lebih kecil = lebih urgent)
-        skor = hari_tersisa + (bobot * 2)
-
-        rows.append({
-            "_skor": skor,
-            "Nama Tugas": t.get("nama_tugas", "Tugas"),
-            "Mata Kuliah": t.get("matkul", "—"),
-            "Deadline": deadline_display,
-            "Hari Tersisa": hari_tersisa if hari_tersisa != 999 else "?",
-            "Prioritas": prioritas,
-            "Estimasi": f"{t.get('estimasi_jam', '?')} jam",
-            "Urgensi": label_urgensi(hari_tersisa),
-        })
-
-    if not rows:
-        return pd.DataFrame()
-
-    df = pd.DataFrame(rows).sort_values("_skor").drop(columns=["_skor"]).reset_index(drop=True)
-    df.index += 1
-    return df
-
-
-def bangun_tabel_jadwal(data_ai: dict) -> pd.DataFrame:
-    """Membangun tabel jadwal harian dari JSON AI."""
-    jadwal = data_ai.get("jadwal_harian", [])
-    if not jadwal:
-        return pd.DataFrame()
-
-    df = pd.DataFrame(jadwal)
-    rename_map = {
-        "hari_ke": "Hari ke-",
-        "tanggal": "Tanggal",
-        "nama_tugas": "Fokus Tugas",
-        "matkul": "Mata Kuliah",
-        "durasi_jam": "Durasi (Jam)",
-        "catatan": "Catatan / Tips",
+    return {
+        "skor":      skor,
+        "ringkasan": ekstrak("ringkasan"),
+        "tips":      ekstrak("tips"),
     }
-    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
-
-    # Format tanggal jika ada
-    if "Tanggal" in df.columns:
-        def fmt_tgl(s):
-            try:
-                return date.fromisoformat(str(s)).strftime("%d %b %Y")
-            except:
-                return s
-        df["Tanggal"] = df["Tanggal"].apply(fmt_tgl)
-
-    return df
 
 
 # ═══════════════════════════════════════════════
-# BAGIAN 4: KALENDER INTERAKTIF (HTML + JS)
+# BAGIAN 4: KALENDER HTML+JS INTERAKTIF
 # ═══════════════════════════════════════════════
 
 def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int) -> str:
-    """
-    Komponen HTML+JS kalender interaktif:
-    - Navigasi prev/next bulan tanpa reload
-    - Klik tanggal → modal dengan detail lengkap tugas
-    - Heatmap 5 level warna
-    - Badge prioritas di dalam modal
-    """
     return f"""<!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
+<head><meta charset="UTF-8">
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: 'Segoe UI', sans-serif; background: transparent; padding: 6px 10px; }}
-
-  .cal-nav {{
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px;
-  }}
-  .cal-nav button {{
-    background: #4a90d9; color: white; border: none; border-radius: 8px;
-    padding: 8px 20px; font-size: 0.95rem; cursor: pointer;
-    transition: background 0.2s; font-weight: 600;
-  }}
-  .cal-nav button:hover {{ background: #2c6fad; }}
-  .month-label {{ font-size: 1.35rem; font-weight: 800; color: #1a1a2e; }}
-
-  .cal-grid {{
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-  }}
-  .cal-header-cell {{
-    text-align: center; font-size: 0.7rem; font-weight: 700;
-    color: #999; padding: 5px 0; letter-spacing: 0.05em; text-transform: uppercase;
-  }}
-
-  .cal-cell {{
-    border-radius: 10px; min-height: 80px; padding: 7px 6px;
-    position: relative; font-size: 0.7rem;
-    transition: transform 0.15s, box-shadow 0.15s;
-    border: 2px solid transparent;
-    cursor: default;
-  }}
-  .cal-cell.clickable {{ cursor: pointer; }}
-  .cal-cell.clickable:hover {{
-    transform: translateY(-3px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-    border-color: #4a90d9 !important;
-    z-index: 2;
-  }}
-  .cal-cell.empty   {{ background: transparent; cursor: default; }}
-  .cal-cell.c0      {{ background: #f4f5f7; color: #bbb; }}
-  .cal-cell.c1      {{ background: #e8f4fd; border-color: #b3d9f5; }}
-  .cal-cell.c2      {{ background: #fff3cd; border-color: #ffc107; }}
-  .cal-cell.c3      {{ background: #ffe0b2; border-color: #ff9800; }}
-  .cal-cell.c4      {{ background: #ffccbc; border-color: #ff5722; }}
-  .cal-cell.c5plus  {{ background: #e53935; border-color: #b71c1c; color: white; }}
-  .cal-cell.today   {{
-    outline: 3px solid #1976d2; outline-offset: -2px;
-  }}
-  .cal-cell.today .day-num {{ color: #1976d2; font-weight: 900; }}
-
-  .day-num {{
-    font-size: 0.92rem; font-weight: 700; margin-bottom: 5px;
-    display: flex; justify-content: space-between; align-items: center;
-  }}
-  .task-badge {{
-    background: rgba(0,0,0,0.12); border-radius: 20px;
-    padding: 1px 7px; font-size: 0.62rem; font-weight: 800;
-  }}
-  .c5plus .task-badge {{ background: rgba(255,255,255,0.25); }}
-
-  .chip {{
-    display: block; background: rgba(0,0,0,0.07); border-radius: 5px;
-    padding: 2px 5px; margin-top: 3px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    font-size: 0.62rem;
-  }}
-  .c5plus .chip {{ background: rgba(255,255,255,0.2); color: white; }}
-  .chip-tinggi  {{ border-left: 3px solid #e53935; }}
-  .chip-sedang  {{ border-left: 3px solid #ff9800; }}
-  .chip-rendah  {{ border-left: 3px solid #4caf50; }}
-
-  .legend {{
-    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-    margin-top: 14px; font-size: 0.7rem; color: #666;
-  }}
-  .leg {{ display: flex; align-items: center; gap: 5px; }}
-  .leg-box {{
-    width: 14px; height: 14px; border-radius: 4px;
-    border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;
-  }}
-
-  /* MODAL */
-  .overlay {{
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.55); z-index: 1000;
-    align-items: center; justify-content: center; padding: 16px;
-  }}
-  .overlay.on {{ display: flex; }}
-  .modal {{
-    background: white; border-radius: 18px; padding: 26px;
-    max-width: 500px; width: 100%; max-height: 82vh; overflow-y: auto;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.3);
-    animation: up 0.22s ease;
-  }}
-  @keyframes up {{
-    from {{ transform: translateY(24px); opacity: 0; }}
-    to   {{ transform: translateY(0); opacity: 1; }}
-  }}
-  .m-date {{ font-size: 1.05rem; font-weight: 800; color: #1a1a2e; margin-bottom: 3px; }}
-  .m-sub  {{ font-size: 0.78rem; color: #888; margin-bottom: 16px; }}
-
-  .task-card {{
-    background: #f8f9fa; border-radius: 11px; padding: 13px 14px;
-    margin-bottom: 10px;
-  }}
-  .tc-name {{ font-weight: 700; font-size: 0.92rem; color: #1a1a2e; margin-bottom: 6px; }}
-  .tc-row  {{
-    display: flex; flex-wrap: wrap; gap: 8px 16px;
-    font-size: 0.76rem; color: #555;
-  }}
-  .tc-row span {{ display: flex; align-items: center; gap: 4px; }}
-  .pri-badge {{
-    display: inline-block; padding: 2px 10px; border-radius: 20px;
-    font-size: 0.67rem; font-weight: 700; margin-top: 7px;
-  }}
-  .pri-tinggi {{ background: #fde8e8; color: #c62828; }}
-  .pri-sedang {{ background: #fff3e0; color: #e65100; }}
-  .pri-rendah {{ background: #e8f5e9; color: #2e7d32; }}
-  .sta-done   {{ background: #e8f5e9; color: #2e7d32; font-size: 0.67rem;
-                 font-weight: 700; padding: 2px 10px; border-radius: 20px;
-                 display: inline-block; margin-top: 7px; margin-left: 6px; }}
-  .sta-todo   {{ background: #fff3e0; color: #e65100; font-size: 0.67rem;
-                 font-weight: 700; padding: 2px 10px; border-radius: 20px;
-                 display: inline-block; margin-top: 7px; margin-left: 6px; }}
-
-  .btn-close {{
-    width: 100%; margin-top: 16px; padding: 11px;
-    background: #f0f2f5; border: none; border-radius: 9px;
-    font-size: 0.88rem; cursor: pointer; color: #333; font-weight: 600;
-    transition: background 0.2s;
-  }}
-  .btn-close:hover {{ background: #e2e5ea; }}
-</style>
-</head>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:'Segoe UI',sans-serif;background:transparent;padding:6px 10px}}
+.cal-nav{{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}}
+.cal-nav button{{background:#4a90d9;color:#fff;border:none;border-radius:8px;padding:8px 20px;
+  font-size:.95rem;cursor:pointer;transition:background .2s;font-weight:600}}
+.cal-nav button:hover{{background:#2c6fad}}
+.month-lbl{{font-size:1.35rem;font-weight:800;color:#1a1a2e}}
+.cal-grid{{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}}
+.hdr{{text-align:center;font-size:.68rem;font-weight:700;color:#999;padding:5px 0;
+  letter-spacing:.05em;text-transform:uppercase}}
+.cell{{border-radius:10px;min-height:78px;padding:7px 6px;border:2px solid transparent;
+  transition:transform .15s,box-shadow .15s;font-size:.7rem}}
+.cell.click{{cursor:pointer}}
+.cell.click:hover{{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.18);
+  border-color:#4a90d9!important;z-index:2}}
+.cell.empty{{background:transparent}}
+.cell.c0{{background:#f4f5f7;color:#bbb}}
+.cell.c1{{background:#e8f4fd;border-color:#b3d9f5}}
+.cell.c2{{background:#fff3cd;border-color:#ffc107}}
+.cell.c3{{background:#ffe0b2;border-color:#ff9800}}
+.cell.c4{{background:#ffccbc;border-color:#ff5722}}
+.cell.c5{{background:#e53935;border-color:#b71c1c;color:#fff}}
+.cell.today{{outline:3px solid #1976d2;outline-offset:-2px}}
+.cell.today .dn{{color:#1976d2;font-weight:900}}
+.dn{{font-size:.9rem;font-weight:700;margin-bottom:4px;display:flex;
+  justify-content:space-between;align-items:center}}
+.badge{{background:rgba(0,0,0,.12);border-radius:20px;padding:1px 7px;
+  font-size:.6rem;font-weight:800}}
+.c5 .badge{{background:rgba(255,255,255,.25)}}
+.chip{{display:block;background:rgba(0,0,0,.07);border-radius:5px;padding:2px 5px;
+  margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.62rem}}
+.c5 .chip{{background:rgba(255,255,255,.2);color:#fff}}
+.chip.pt{{border-left:3px solid #e53935}}
+.chip.ps{{border-left:3px solid #ff9800}}
+.chip.pr{{border-left:3px solid #4caf50}}
+.legend{{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  margin-top:14px;font-size:.7rem;color:#666}}
+.leg{{display:flex;align-items:center;gap:5px}}
+.lb{{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}}
+/* Modal */
+.overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:1000;align-items:center;justify-content:center;padding:16px}}
+.overlay.on{{display:flex}}
+.modal{{background:#fff;border-radius:18px;padding:26px;max-width:500px;width:100%;
+  max-height:82vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);
+  animation:up .22s ease}}
+@keyframes up{{from{{transform:translateY(24px);opacity:0}}to{{transform:translateY(0);opacity:1}}}}
+.m-date{{font-size:1.05rem;font-weight:800;color:#1a1a2e;margin-bottom:3px}}
+.m-sub{{font-size:.78rem;color:#888;margin-bottom:16px}}
+.tcard{{background:#f8f9fa;border-radius:11px;padding:13px 14px;margin-bottom:10px}}
+.tc-name{{font-weight:700;font-size:.92rem;color:#1a1a2e;margin-bottom:6px}}
+.tc-row{{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:#555}}
+.tc-row span{{display:flex;align-items:center;gap:4px}}
+.pbadge{{display:inline-block;padding:2px 10px;border-radius:20px;
+  font-size:.66rem;font-weight:700;margin-top:7px}}
+.pt{{background:#fde8e8;color:#c62828}}
+.ps{{background:#fff3e0;color:#e65100}}
+.pr{{background:#e8f5e9;color:#2e7d32}}
+.sdone{{background:#e8f5e9;color:#2e7d32;font-size:.66rem;font-weight:700;
+  padding:2px 10px;border-radius:20px;display:inline-block;margin-top:7px;margin-left:6px}}
+.stodo{{background:#fff3e0;color:#e65100;font-size:.66rem;font-weight:700;
+  padding:2px 10px;border-radius:20px;display:inline-block;margin-top:7px;margin-left:6px}}
+.btn-close{{width:100%;margin-top:16px;padding:11px;background:#f0f2f5;border:none;
+  border-radius:9px;font-size:.88rem;cursor:pointer;color:#333;font-weight:600;transition:background .2s}}
+.btn-close:hover{{background:#e2e5ea}}
+</style></head>
 <body>
-
 <div class="cal-nav">
   <button onclick="nav(-1)">&#8592; Prev</button>
-  <span class="month-label" id="lbl"></span>
+  <span class="month-lbl" id="lbl"></span>
   <button onclick="nav(1)">Next &#8594;</button>
 </div>
-
 <div class="cal-grid" id="grid"></div>
-
 <div class="legend">
-  <div class="leg"><div class="leg-box" style="background:#f4f5f7"></div>Bebas</div>
-  <div class="leg"><div class="leg-box" style="background:#e8f4fd;border-color:#b3d9f5"></div>1 tugas</div>
-  <div class="leg"><div class="leg-box" style="background:#fff3cd;border-color:#ffc107"></div>2 tugas</div>
-  <div class="leg"><div class="leg-box" style="background:#ffe0b2;border-color:#ff9800"></div>3 tugas</div>
-  <div class="leg"><div class="leg-box" style="background:#ffccbc;border-color:#ff5722"></div>4 tugas</div>
-  <div class="leg"><div class="leg-box" style="background:#e53935"></div>5+ 🚨</div>
-  <div class="leg"><div class="leg-box" style="outline:3px solid #1976d2;background:white"></div>Hari Ini</div>
+  <div class="leg"><div class="lb" style="background:#f4f5f7"></div>Bebas</div>
+  <div class="leg"><div class="lb" style="background:#e8f4fd;border-color:#b3d9f5"></div>1</div>
+  <div class="leg"><div class="lb" style="background:#fff3cd;border-color:#ffc107"></div>2</div>
+  <div class="leg"><div class="lb" style="background:#ffe0b2;border-color:#ff9800"></div>3</div>
+  <div class="leg"><div class="lb" style="background:#ffccbc;border-color:#ff5722"></div>4</div>
+  <div class="leg"><div class="lb" style="background:#e53935"></div>5+ 🚨</div>
+  <div class="leg"><div class="lb" style="outline:3px solid #1976d2;background:#fff"></div>Hari ini</div>
 </div>
-
-<div class="overlay" id="overlay" onclick="closeM(event)">
+<div class="overlay" id="ov" onclick="closeM(event)">
   <div class="modal">
-    <div class="m-date" id="m-date"></div>
-    <div class="m-sub"  id="m-sub"></div>
-    <div id="m-body"></div>
+    <div class="m-date" id="md"></div>
+    <div class="m-sub"  id="ms"></div>
+    <div id="mb"></div>
     <button class="btn-close" onclick="closeML()">✕ Tutup</button>
   </div>
 </div>
-
 <script>
-const DATA = {beban_json};
-let Y = {tahun_awal}, M = {bulan_awal};
-
-const BULAN = ["Januari","Februari","Maret","April","Mei","Juni",
-               "Juli","Agustus","September","Oktober","November","Desember"];
-const HARI_PANJANG = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-const BULAN_PENDEK = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-
-function pad(n){{ return String(n).padStart(2,"0"); }}
-function isoKey(y,m,d){{ return y+"-"+pad(m)+"-"+pad(d); }}
-
-function render() {{
-  document.getElementById("lbl").textContent = BULAN[M] + " " + Y;
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-
-  const heads = ["Sen","Sel","Rab","Kam","Jum","Sab","Min"];
-  heads.forEach(h => {{
-    const el = document.createElement("div");
-    el.className = "cal-header-cell";
-    el.textContent = h;
-    grid.appendChild(el);
+const D={beban_json};
+let Y={tahun_awal},M={bulan_awal};
+const BLN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const HPN=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+const BS=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+function pad(n){{return String(n).padStart(2,"0")}}
+function key(y,m,d){{return y+"-"+pad(m)+"-"+pad(d)}}
+function render(){{
+  document.getElementById("lbl").textContent=BLN[M]+" "+Y;
+  const g=document.getElementById("grid");g.innerHTML="";
+  ["Sen","Sel","Rab","Kam","Jum","Sab","Min"].forEach(h=>{{
+    const e=document.createElement("div");e.className="hdr";e.textContent=h;g.appendChild(e);
   }});
-
-  const today = new Date();
-  const firstDay = new Date(Y, M, 1);
-  const totalDays = new Date(Y, M+1, 0).getDate();
-  const offset = (firstDay.getDay() + 6) % 7; // Senin = 0
-
-  for(let i=0;i<offset;i++) {{
-    const e=document.createElement("div"); e.className="cal-cell empty"; grid.appendChild(e);
-  }}
-
-  for(let d=1;d<=totalDays;d++) {{
-    const key = isoKey(Y, M+1, d);
-    const info = DATA[key];
-    const n = info ? info.jumlah : 0;
-
-    let cls = "c0";
-    if(n===1) cls="c1"; else if(n===2) cls="c2";
-    else if(n===3) cls="c3"; else if(n===4) cls="c4";
-    else if(n>=5)  cls="c5plus";
-
-    const isToday = (d===today.getDate() && M===today.getMonth() && Y===today.getFullYear());
-    const cell = document.createElement("div");
-    cell.className = "cal-cell "+cls+(isToday?" today":"")+(n>0?" clickable":"");
-
-    let badge = n>0 ? `<span class="task-badge">${{n}}</span>` : "";
-    let chips = "";
-    if(info) {{
-      info.tugas.slice(0,2).forEach(t => {{
-        const nm = t.tugas.length>17 ? t.tugas.slice(0,17)+"…" : t.tugas;
-        const pCls = (t.prioritas||"").toLowerCase().startsWith("t") ? "chip-tinggi"
-                   : (t.prioritas||"").toLowerCase().startsWith("r") ? "chip-rendah" : "chip-sedang";
-        chips += `<span class="chip ${{pCls}}">📌 ${{nm}}</span>`;
+  const today=new Date();
+  const fd=new Date(Y,M,1);
+  const td=new Date(Y,M+1,0).getDate();
+  const off=(fd.getDay()+6)%7;
+  for(let i=0;i<off;i++){{const e=document.createElement("div");e.className="cell empty";g.appendChild(e);}}
+  for(let d=1;d<=td;d++){{
+    const k=key(Y,M+1,d);
+    const info=D[k];const n=info?info.jumlah:0;
+    let cls=n===0?"c0":n===1?"c1":n===2?"c2":n===3?"c3":n===4?"c4":"c5";
+    const isTd=(d===today.getDate()&&M===today.getMonth()&&Y===today.getFullYear());
+    const cell=document.createElement("div");
+    cell.className="cell "+cls+(isTd?" today":"")+(n>0?" click":"");
+    let badge=n>0?`<span class="badge">${{n}}</span>`:"";
+    let chips="";
+    if(info){{
+      info.tugas.slice(0,2).forEach(t=>{{
+        const nm=t.tugas.length>16?t.tugas.slice(0,16)+"…":t.tugas;
+        const pc=(t.prioritas||"").toLowerCase().startsWith("t")?"pt":
+                 (t.prioritas||"").toLowerCase().startsWith("r")?"pr":"ps";
+        chips+=`<span class="chip ${{pc}}">📌 ${{nm}}</span>`;
       }});
-      if(info.tugas.length>2) chips += `<span class="chip">+${{info.tugas.length-2}} lagi…</span>`;
+      if(info.tugas.length>2)chips+=`<span class="chip">+${{info.tugas.length-2}} lagi…</span>`;
     }}
-
-    cell.innerHTML = `<div class="day-num"><span>${{d}}</span>${{badge}}</div>${{chips}}`;
-    if(n>0) cell.addEventListener("click", ()=>openM(key,info,d));
-    grid.appendChild(cell);
+    cell.innerHTML=`<div class="dn"><span>${{d}}</span>${{badge}}</div>${{chips}}`;
+    if(n>0)cell.addEventListener("click",()=>openM(k,info,d));
+    g.appendChild(cell);
   }}
 }}
-
-function nav(dir) {{
-  M += dir;
-  if(M<0)  {{ M=11; Y--; }}
-  if(M>11) {{ M=0;  Y++; }}
-  render();
-}}
-
-function openM(key, info, d) {{
-  const parts = key.split("-");
-  const dt = new Date(+parts[0], +parts[1]-1, +parts[2]);
-  document.getElementById("m-date").textContent =
-    HARI_PANJANG[dt.getDay()]+", "+d+" "+BULAN_PENDEK[dt.getMonth()]+" "+dt.getFullYear();
-  document.getElementById("m-sub").textContent =
-    info.jumlah + " tugas jatuh tempo hari ini";
-
-  let html = "";
-  info.tugas.forEach((t,i) => {{
-    const priCls = (t.prioritas||"").toLowerCase().startsWith("t") ? "pri-tinggi"
-                 : (t.prioritas||"").toLowerCase().startsWith("r") ? "pri-rendah" : "pri-sedang";
-    const isDone = (t.status||"").toLowerCase().includes("selesai")||
-                   (t.status||"").toLowerCase().includes("done");
-    html += `
-    <div class="task-card">
+function nav(dir){{M+=dir;if(M<0){{M=11;Y--;}}if(M>11){{M=0;Y++;}}render();}}
+function openM(k,info,d){{
+  const pts=k.split("-");const dt=new Date(+pts[0],+pts[1]-1,+pts[2]);
+  document.getElementById("md").textContent=HPN[dt.getDay()]+", "+d+" "+BS[dt.getMonth()]+" "+dt.getFullYear();
+  document.getElementById("ms").textContent=info.jumlah+" tugas deadline hari ini";
+  let html="";
+  info.tugas.forEach((t,i)=>{{
+    const pc=(t.prioritas||"").toLowerCase().startsWith("t")?"pt":
+             (t.prioritas||"").toLowerCase().startsWith("r")?"pr":"ps";
+    const done=(t.status||"").toLowerCase().includes("selesai")||(t.status||"").toLowerCase().includes("done");
+    html+=`<div class="tcard">
       <div class="tc-name">${{i+1}}. ${{t.tugas}}</div>
       <div class="tc-row">
-        ${{t.matkul!=="—"?`<span>📚 ${{t.matkul}}</span>`:"" }}
-        <span>📅 Deadline: ${{t.deadline}}</span>
-        <span>⏱️ Est: ${{t.estimasi_jam}} jam</span>
+        ${{t.matkul&&t.matkul!=="—"?`<span>📚 ${{t.matkul}}</span>`:""}}
+        <span>📅 ${{t.deadline}}</span>
+        <span>⏱️ ${{t.estimasi_jam}} jam</span>
       </div>
-      <span class="pri-badge ${{priCls}}">🎯 ${{t.prioritas||"Sedang"}}</span>
-      <span class="${{isDone?"sta-done":"sta-todo"}}">${{isDone?"✅ Selesai":"⏳ Belum Selesai"}}</span>
+      <span class="pbadge ${{pc}}">🎯 ${{t.prioritas||"Sedang"}}</span>
+      <span class="${{done?"sdone":"stodo"}}">${{done?"✅ Selesai":"⏳ Belum Selesai"}}</span>
     </div>`;
   }});
-
-  document.getElementById("m-body").innerHTML = html;
-  document.getElementById("overlay").classList.add("on");
+  document.getElementById("mb").innerHTML=html;
+  document.getElementById("ov").classList.add("on");
 }}
-
-function closeM(e) {{ if(e.target===document.getElementById("overlay")) closeML(); }}
-function closeML() {{ document.getElementById("overlay").classList.remove("on"); }}
-document.addEventListener("keydown", e=>{{ if(e.key==="Escape") closeML(); }});
-
+function closeM(e){{if(e.target===document.getElementById("ov"))closeML();}}
+function closeML(){{document.getElementById("ov").classList.remove("on");}}
+document.addEventListener("keydown",e=>{{if(e.key==="Escape")closeML();}});
 render();
 </script>
-</body>
-</html>"""
+</body></html>"""
 
 
 # ═══════════════════════════════════════════════
-# TAMPILAN UTAMA STREAMLIT
+# TAMPILAN UTAMA
 # ═══════════════════════════════════════════════
 
+# ── Sidebar: pilih model ──────────────────────────────────────────────────────
+with st.sidebar:
+    st.header("⚙️ Pengaturan AI")
+    model_pilihan = st.selectbox(
+        "Model Ollama",
+        options=MODEL_OPTIONS,
+        index=0,
+        help="llama3.1:8b paling bagus. phi3 paling ringan tapi sering gagal JSON.",
+    )
+    st.caption(
+        "**Rekomendasi:**\n"
+        "- `llama3.1:8b` — terbaik, ~5GB\n"
+        "- `phi3` — ringan, ~2.3GB (kadang tidak konsisten)\n\n"
+    )
+    st.divider()
+    st.caption("🧠 CogniPace AI v4\nStreamlit + Pandas + Ollama")
+
+# ── Header ────────────────────────────────────────────────────────────────────
 st.title("🧠 CogniPace AI")
 st.markdown(
     "**Asisten Manajemen Beban Kognitif Mahasiswa**  \n"
-    "Upload CSV tugas (format apapun) → AI menganalisis semua data → "
-    "Kalender heatmap interaktif + Jadwal prioritas dari AI"
+    "Upload CSV tugas kemudian AI akan berikan analisis & tips"
 )
 st.divider()
 
-# ── FILE UPLOADER ─────────────────────────────────────────────────────────────
+# ── Upload ────────────────────────────────────────────────────────────────────
 st.subheader("📂 Upload Data Tugas")
-st.caption("Format CSV bebas — minimal ada kolom nama tugas dan deadline. Semua analisis dilakukan oleh AI.")
+st.caption(
+    "Format CSV bebas minimal kolom **nama tugas** dan **deadline**. "
+    "Kolom lain (prioritas, estimasi waktu, matkul, status) opsional."
+)
 uploaded_file = st.file_uploader("Pilih file .csv", type=["csv"])
 
 if uploaded_file is not None:
@@ -652,162 +581,173 @@ if uploaded_file is not None:
     st.subheader("👀 Preview Data")
     st.dataframe(df_raw, use_container_width=True)
 
-    kolom_info = ", ".join([f'"{c}"' for c in df_raw.columns])
-    st.info(f"📊 {len(df_raw)} baris data · Kolom: {kolom_info}")
+    # Deteksi kolom
+    mapping = deteksi_kolom(df_raw)
+    kolom_display = " · ".join([f"**{k}** → `{v}`" for k, v in mapping.items()])
+    if mapping:
+        st.info(f"🔍 Kolom terdeteksi: {kolom_display}")
+    else:
+        st.warning("⚠️ Tidak ada kolom standar yang dikenali. Pastikan ada kolom deadline.")
+
+    if "deadline" not in mapping:
+        st.error("❌ Kolom **deadline** tidak ditemukan. Periksa nama kolom di CSV.")
+        st.stop()
+
+    df_proc = proses_df(df_raw, mapping)
+    total_valid   = df_proc["_deadline"].notna().sum()
+    total_aktif   = (~df_proc["_selesai"] & df_proc["_deadline"].notna()).sum()
+
+    st.info(f"📊 {len(df_raw)} baris · {total_valid} dengan deadline valid · {total_aktif} belum selesai")
     st.divider()
 
-    # ── TOMBOL ANALISIS ───────────────────────────────────────────────────────
-    if st.button("🔍 Analisis dengan AI & Buat Kalender", type="primary", use_container_width=True):
+    # ── Tombol ───────────────────────────────────────────────────────────────
+    if st.button("🔍 Buat Kalender & Analisis AI", type="primary", use_container_width=True):
+
+        # ── PROSES DATA (Python, selalu berhasil) ────────────────────────────
+        beban_dict  = bangun_beban(df_proc)
+        df_prio     = bangun_tabel_prioritas(df_proc)
+        df_jadwal   = bangun_jadwal_harian(df_proc)
+
+        # ── PANGGIL AI (opsional, hanya untuk teks) ──────────────────────────
+        ai_hasil = {"skor": None, "ringkasan": "", "tips": ""}
+        ai_error = None
 
         if not OLLAMA_TERSEDIA:
-            st.error("❌ Library `ollama` tidak ditemukan. Jalankan: `pip install ollama`")
-            st.stop()
-
-        with st.spinner("🤖 AI sedang menganalisis semua data tugas kamu... (bisa 15–30 detik)"):
-            try:
-                csv_string = df_raw.to_csv(index=False)
-                respons_raw = panggil_ollama(csv_string, kolom_info)
-            except Exception as e:
-                st.error(
-                    "❌ **Tidak dapat terhubung ke Ollama.**\n\n"
-                    "Jalankan server Ollama dulu:\n"
-                    "```\nollama serve\n```\n"
-                    "Unduh model jika belum:\n"
-                    "```\nollama pull phi3\n```"
-                )
-                st.stop()
-
-            # Parse JSON dari AI
-            data_ai = bersihkan_dan_parse_json(respons_raw)
-
-            if not data_ai:
-                st.error(
-                    "⚠️ AI tidak mengembalikan JSON yang valid. "
-                    "Coba klik tombol analisis lagi (model phi3 kadang tidak konsisten)."
-                )
-                with st.expander("🛠️ Respons mentah AI"):
-                    st.text(respons_raw)
-                st.stop()
-
-        st.success("✅ Analisis AI selesai!")
-
-        # ══════════════════════════════════════════
-        # OUTPUT SECTION
-        # ══════════════════════════════════════════
-
-        # ── METRIK RINGKASAN ──────────────────────────────────────────────
-        skor = data_ai.get("skor_beban", None)
-        tugas_list = data_ai.get("tugas", [])
-        total_aktif = sum(1 for t in tugas_list
-                          if not t.get("status","").lower().startswith("selesai"))
-        total_padat = 0  # dihitung setelah build beban
-
-        beban_dict = bangun_beban_dari_ai(data_ai)
-        total_padat = sum(1 for v in beban_dict.values() if v["jumlah"] >= 3)
-
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if skor:
+            ai_error = "Library `ollama` tidak ditemukan. `pip install ollama`"
+        else:
+            with st.spinner(f"🤖 AI ({model_pilihan}) menganalisis... (~10-20 detik)"):
                 try:
-                    skor_num = int(float(str(skor)))
-                    skor_num = max(1, min(10, skor_num))
-                    delta = "⚠️ Berat" if skor_num >= 7 else ("🟡 Sedang" if skor_num >= 4 else "🟢 Ringan")
-                    st.metric("🎯 Skor Beban Kognitif", f"{skor_num} / 10", delta)
-                except:
-                    st.metric("🎯 Skor Beban Kognitif", str(skor))
+                    kolom_info = ", ".join([f'"{c}"' for c in df_raw.columns])
+                    respons_ai = panggil_ai_analisis(
+                        df_raw.to_csv(index=False), kolom_info, model_pilihan
+                    )
+                    ai_hasil = parse_ai_teks(respons_ai)
+                    # Simpan raw untuk debug
+                    st.session_state["ai_raw"] = respons_ai
+                except Exception as e:
+                    ai_error = str(e)
+                    st.session_state["ai_raw"] = ""
+
+        st.success("✅ Kalender & jadwal siap!")
+
+        # ════════════════════════════════════════
+        # OUTPUT
+        # ════════════════════════════════════════
+
+        # ── Metrik ───────────────────────────────────────────────────────────
+        total_padat = sum(1 for v in beban_dict.values() if v["jumlah"] >= 3)
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            skor = ai_hasil.get("skor")
+            if skor:
+                delta = "⚠️ Berat" if skor >= 7 else ("🟡 Sedang" if skor >= 4 else "🟢 Ringan")
+                st.metric("🎯 Skor Beban (AI)", f"{skor} / 10", delta)
             else:
-                st.metric("🎯 Skor Beban Kognitif", "N/A")
-        with col2:
+                st.metric("🎯 Skor Beban (AI)", "N/A", "AI offline" if ai_error else "—")
+        with c2:
             st.metric("📋 Tugas Aktif", f"{total_aktif} tugas")
-        with col3:
-            st.metric("🔴 Hari Padat (3+ tugas)", f"{total_padat} hari")
+        with c3:
+            st.metric("🔴 Hari Padat (3+ DL)", f"{total_padat} hari")
+
+        # AI error notice (kecil, tidak blokir output)
+        if ai_error:
+            st.warning(
+                f"⚠️ AI tidak tersedia ({ai_error[:80]}...). "
+                "Kalender & jadwal tetap ditampilkan dari data CSV."
+            )
 
         st.divider()
 
-        # ── KALENDER INTERAKTIF ───────────────────────────────────────────
+        # ── Kalender ─────────────────────────────────────────────────────────
         st.subheader("📅 Kalender Beban Tugas")
         st.caption(
-            "Navigasi bulan dengan **← Prev / Next →** · "
-            "**Klik tanggal berwarna** untuk melihat detail tugas, prioritas, dan estimasi waktu"
+            "Kalender penyebaran tugas dengan berisi detail tugas, prioritas & estimasi"
         )
 
         if beban_dict:
-            tgl_pertama = min(beban_dict.keys())
-            thn_awal = int(tgl_pertama[:4])
-            bln_awal = int(tgl_pertama[5:7]) - 1  # 0-indexed JS
+            tgl0    = min(beban_dict.keys())
+            thn_awal = int(tgl0[:4])
+            bln_awal = int(tgl0[5:7]) - 1
         else:
             thn_awal = date.today().year
             bln_awal = date.today().month - 1
 
-        beban_json_str = json.dumps(beban_dict, ensure_ascii=False)
-        html_kal = render_kalender(beban_json_str, thn_awal, bln_awal)
-        components.html(html_kal, height=540, scrolling=False)
+        beban_js = json.dumps(beban_dict, ensure_ascii=False)
+        components.html(render_kalender(beban_js, thn_awal, bln_awal), height=540, scrolling=False)
 
         st.divider()
 
-        # ── TABEL PRIORITAS ───────────────────────────────────────────────
+        # ── Tabel prioritas ───────────────────────────────────────────────────
         st.subheader("📋 Tabel Prioritas Pengerjaan Tugas")
-        st.caption("Diurutkan otomatis: prioritas tertinggi + deadline terdekat → kerjakan dari baris paling atas")
-
-        df_prio = bangun_tabel_prioritas(data_ai)
+        st.caption("Urutan: deadline terdekat + prioritas tertinggi. kerjakan dari baris paling atas")
 
         if not df_prio.empty:
             def warnai(row):
-                u = row.get("Urgensi", "")
-                if "Terlambat" in u or "Kritis" in u:
-                    return ["background-color:#ffe0e0"] * len(row)
-                elif "Mendesak" in u:
-                    return ["background-color:#fff3e0"] * len(row)
-                elif "Perhatikan" in u:
-                    return ["background-color:#fffde7"] * len(row)
-                else:
-                    return ["background-color:#f1f8e9"] * len(row)
-
+                u = row.get("Urgensi","")
+                if "Terlambat" in u or "Kritis" in u: return ["background-color:#ffe0e0"]*len(row)
+                elif "Mendesak" in u:                 return ["background-color:#fff3e0"]*len(row)
+                elif "Perhatikan" in u:               return ["background-color:#fffde7"]*len(row)
+                else:                                 return ["background-color:#f1f8e9"]*len(row)
             st.dataframe(
                 df_prio.style.apply(warnai, axis=1),
                 use_container_width=True,
-                height=min(60 + len(df_prio) * 38, 400),
+                height=min(60 + len(df_prio)*38, 400),
             )
         else:
             st.success("🎉 Semua tugas sudah selesai!")
 
         st.divider()
 
-        # ── JADWAL HARIAN AI ──────────────────────────────────────────────
-        st.subheader("🗓️ Rekomendasi Jadwal Harian (dari AI)")
-        st.caption("Jadwal yang disusun AI berdasarkan prioritas, estimasi waktu, dan kedekatan deadline")
-
-        df_jadwal = bangun_tabel_jadwal(data_ai)
+        # ── Jadwal harian ─────────────────────────────────────────────────────
+        st.subheader("🗓️ Rekomendasi Jadwal Harian")
+        st.caption("Jadwal otomatis dari AI — 1 tugas per hari, diurutkan dari yang paling mendesak")
 
         if not df_jadwal.empty:
-            st.dataframe(df_jadwal, use_container_width=True, hide_index=True,
-                         height=min(60 + len(df_jadwal) * 38, 450))
+            def warnai_jadwal(row):
+                c = row.get("Catatan","")
+                if "Deadline HARI INI" in c or "terlewat" in c:
+                    return ["background-color:#ffe0e0"]*len(row)
+                elif "🔴" in c:
+                    return ["background-color:#fff3e0"]*len(row)
+                else:
+                    return [""]*len(row)
+            st.dataframe(
+                df_jadwal.style.apply(warnai_jadwal, axis=1),
+                use_container_width=True,
+                hide_index=True,
+                height=min(60 + len(df_jadwal)*38, 460),
+            )
         else:
-            st.info("AI tidak menghasilkan jadwal harian. Gunakan tabel prioritas di atas.")
+            st.info("Tidak ada tugas aktif yang perlu dijadwalkan.")
 
         st.divider()
 
-        # ── RINGKASAN & TIPS AI ───────────────────────────────────────────
-        st.subheader("💡 Ringkasan & Tips dari AI")
+        # ── Analisis & Tips AI ────────────────────────────────────────────────
+        st.subheader("💡 Analisis & Tips dari AI")
 
-        ringkasan = data_ai.get("ringkasan", "")
-        tips_list = data_ai.get("tips", [])
+        ringkasan = ai_hasil.get("ringkasan","")
+        tips      = ai_hasil.get("tips","")
 
         if ringkasan:
-            st.info(f"📊 **Analisis AI:** {ringkasan}")
-
-        if tips_list:
+            st.info(f"📊 **Analisis:** {ringkasan}")
+        if tips:
             st.markdown("**🎯 Tips Manajemen Waktu:**")
-            for i, tip in enumerate(tips_list, 1):
-                st.markdown(f"{i}. {tip}")
+            st.markdown(tips)
 
-        if not ringkasan and not tips_list:
-            st.info("AI tidak memberikan tips tambahan untuk data ini.")
+        if not ringkasan and not tips:
+            if ai_error:
+                st.info(
+                    "💡 AI tidak tersedia. Gunakan kalender dan tabel prioritas di atas "
+                    "sebagai panduan pengerjaan tugas."
+                )
+            else:
+                st.info("AI tidak memberikan analisis untuk data ini.")
 
-        # Ekspander debug
-        with st.expander("🛠️ Lihat JSON Mentah dari AI (debug)"):
-            st.json(data_ai)
+        # Debug expander
+        if st.session_state.get("ai_raw"):
+            with st.expander("🛠️ Respons mentah AI (debug)"):
+                st.text(st.session_state["ai_raw"])
 
-# ── FOOTER ────────────────────────────────────────────────────────────────────
+# ── Footer ────────────────────────────────────────────────────────────────────
 st.divider()
-st.caption("🧠 CogniPace AI · Streamlit + Pandas + Ollama (phi3) · v3 — AI-First Architecture")
+st.caption("🧠 CogniPace AI v4 · Python-first + Ollama optional · Streamlit + Pandas")

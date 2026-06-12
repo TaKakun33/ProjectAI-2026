@@ -1,9 +1,14 @@
-# COGNIPACE AI
+# 🧠 CogniPace AI
 
-CogniPace AI adalah aplikasi web berbasis *Hybrid Architecture* untuk membantu mahasiswa mengelola beban kognitif akademik. Aplikasi ini menggabungkan logika pemrograman deterministik (Python/Pandas) untuk penjadwalan presisi dan Generative AI (Groq API) untuk analisis beban studi serta pendampingan psikologis.
+> **Asisten Manajemen Beban Kognitif Mahasiswa**  
+> Aplikasi web berbasis AI yang membantu mahasiswa memprediksi beban studi, memvisualisasikan tumpukan deadline, menyusun jadwal prioritas otomatis, dan berdiskusi langsung mengenai beban tugas melalui Chatbot Akademik interaktif.
 
-> **🌐 Akses Prototipe (Live Demo)**
-> **[Klik di sini untuk membuka CogniPace AI](https://cognipace.streamlit.app)**
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-red?logo=streamlit)
+![Ollama](https://img.shields.io/badge/Ollama-Supported-green)
+
+**🌐 Akses Prototipe (Live Demo)**
+**[Klik di sini untuk membuka CogniPace AI](https://cognipace.streamlit.app)**
 
 ---
 

@@ -1,11 +1,11 @@
 # 🧠 CogniPace AI
 
 > **Asisten Manajemen Beban Kognitif Mahasiswa**  
-> Aplikasi web berbasis AI yang membantu mahasiswa memprediksi beban studi, memvisualisasikan tumpukan deadline lewat kalender interaktif, dan menyusun jadwal prioritas pengerjaan tugas secara otomatis.
+> Aplikasi web berbasis AI yang membantu mahasiswa memprediksi beban studi, memvisualisasikan tumpukan deadline, menyusun jadwal prioritas otomatis, dan berdiskusi langsung mengenai beban tugas melalui Chatbot Akademik interaktif.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-red?logo=streamlit)
-![Ollama](https://img.shields.io/badge/Ollama-phi3-green)
+![Ollama](https://img.shields.io/badge/Ollama-Supported-green)
 
 ---
 
@@ -13,43 +13,27 @@
 
 CogniPace AI adalah prototype aplikasi web yang dirancang untuk membantu mahasiswa mengelola beban kognitif akademik mereka. Dengan mengunggah file CSV berisi data tugas, aplikasi ini akan:
 
-1. **Memvisualisasikan** distribusi deadline dalam bentuk kalender heatmap interaktif
-2. **Memprediksi** skor beban kognitif menggunakan Local LLM (Ollama)
-3. **Menyusun** jadwal prioritas pengerjaan tugas secara otomatis berdasarkan kedekatan deadline dan tumpukan tugas
-4. **Merekomendasikan** actionable plan harian agar semua tugas selesai tepat waktu
+1. **Memvisualisasikan** distribusi deadline dalam bentuk kalender heatmap interaktif.
+2. **Menganalisis** skor beban kognitif dan memecah tugas terberat (Micro-Stepping) menggunakan Local LLM.
+3. **Menyusun** jadwal prioritas pengerjaan tugas secara otomatis.
+4. **Berdiskusi** secara interaktif mengenai jadwal dan tips belajar melalui **Chatbot Asisten Akademik**.
 
 ---
 
 ## ✨ Fitur Utama
 
-### 📅 Kalender Interaktif
-- Navigasi bebas ke bulan manapun menggunakan tombol **Prev / Next**
-- **Klik tanggal** untuk melihat detail lengkap tugas yang jatuh tempo pada hari tersebut (nama tugas, mata kuliah, status)
-- Heatmap 5 level warna berdasarkan kepadatan deadline
-- Highlight khusus untuk hari ini
+### 📅 Kalender Interaktif & Tabel Prioritas
+- Heatmap 5 level warna untuk memantau kepadatan deadline[cite: 6].
+- Tabel prioritas otomatis yang mengurutkan tugas berdasarkan urgensi (kritis, mendesak, atau aman).
 
-| Warna | Keterangan |
-|-------|-----------|
-| ⬜ Abu-abu | Tidak ada tugas |
-| 🟨 Kuning | 1 tugas |
-| 🟧 Oranye | 2 tugas |
-| 🟥 Merah muda | 3 tugas |
-| 🔴 Merah tua | 4 tugas |
-| 🚨 Merah pekat | 5+ tugas (Zona Kritis) |
+### 🤖 Analisis & Pemecahan Tugas (AI)
+- **Skor Beban Kognitif:** Prediksi tingkat stres studi (skala 1–10).
+- **Micro-Stepping:** AI secara otomatis mendeteksi tugas terberat dan memecahnya menjadi 3 langkah kecil yang konkret untuk dikerjakan.
+- **Tips Manajemen Waktu:** Rekomendasi teknik belajar yang disesuaikan.
 
-### 📋 Tabel Prioritas Otomatis
-- Tugas diurutkan berdasarkan **skor prioritas** (deadline terdekat + tumpukan terbanyak = prioritas tertinggi)
-- Label urgensi berwarna: 🔴 Kritis → 🟠 Mendesak → 🟡 Perhatikan → 🟢 Aman
-- Dibuat dari Pandas **tetap berfungsi meski Ollama offline**
-
-### 🤖 Analisis AI (Ollama phi3)
-- Prediksi skor beban kognitif (skala 1–10)
-- Jadwal harian terstruktur (tabel JSON dari AI)
-- Ringkasan analisis dan tips manajemen waktu
-- Fleksibel Pilih model llama3.1:8b (akurat) atau phi3 (ringan) langsung dari aplikasi.
-
-### 📂 CSV Dinamis
-Aplikasi mengenali **berbagai format kolom** secara otomatis tidak harus menggunakan nama kolom tertentu.
+### 💬 Chatbot Asisten Akademik
+- Fitur chat interaktif yang memungkinkan mahasiswa bertanya seputar jadwal (contoh: *"Tugas apa yang harus dikerjakan besok?"*).
+- Menjawab berdasarkan "sumber kebenaran" dari data jadwal yang Anda unggah, sehingga meminimalkan risiko halusinasi AI.
 
 ---
 
@@ -160,3 +144,5 @@ Aplikasi akan otomatis terbuka di browser pada alamat:
 ```
 http://localhost:8501
 ```
+
+ollama pull phi3

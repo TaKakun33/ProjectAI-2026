@@ -1,75 +1,171 @@
-# 🧠 CogniPace AI
+# COGNIPACE AI
 
-> **Asisten Manajemen Beban Kognitif Mahasiswa**  
-> Aplikasi web berbasis AI yang membantu mahasiswa memprediksi beban studi, memvisualisasikan tumpukan deadline, menyusun jadwal prioritas otomatis, dan berdiskusi langsung mengenai beban tugas melalui Chatbot Akademik interaktif.
+CogniPace AI adalah aplikasi web berbasis *Hybrid Architecture* untuk membantu mahasiswa mengelola beban kognitif akademik. Aplikasi ini menggabungkan logika pemrograman deterministik (Python/Pandas) untuk penjadwalan presisi dan Generative AI (Groq API) untuk analisis beban studi serta pendampingan psikologis.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-red?logo=streamlit)
-![Ollama](https://img.shields.io/badge/Ollama-Supported-green)
+> **🌐 Akses Prototipe (Live Demo)**
+> **[Klik di sini untuk membuka CogniPace AI](https://cognipace.streamlit.app)**
 
 ---
 
-## 📖 Tentang Aplikasi
+TUJUAN PRODUK
+=============
 
-CogniPace AI adalah prototype aplikasi web yang dirancang untuk membantu mahasiswa mengelola beban kognitif akademik mereka. Dengan mengunggah file CSV berisi data tugas, aplikasi ini akan:
+Mahasiswa sering mengalami *overload* informasi dan kesulitan dalam mengatur prioritas tugas secara terstruktur. CogniPace mencoba menjembatani masalah tersebut dengan alur:
 
-1. **Memvisualisasikan** distribusi deadline dalam bentuk kalender heatmap interaktif.
-2. **Menganalisis** skor beban kognitif dan memecah tugas terberat (Micro-Stepping) menggunakan Local LLM.
-3. **Menyusun** jadwal prioritas pengerjaan tugas secara otomatis.
-4. **Berdiskusi** secara interaktif mengenai jadwal dan tips belajar melalui **Chatbot Asisten Akademik**.
+1. Pengguna mengunggah file .csv data tugas.
+2. Sistem menghitung skor urgensi secara matematis (deterministik).
+3. Visualisasi data melalui kalender heatmap dan tabel jadwal harian.
+4. AI menganalisis beban studi, memberikan tips *micro-stepping*, dan menyediakan *chatbot* untuk konsultasi jadwal secara *real-time*.
+
+---
+
+FITUR UTAMA
+===========
+
+- **Kalender Heatmap Interaktif**: Visualisasi kepadatan deadline dengan 5 level warna.
+- **Tabel Prioritas Otomatis**: Pengurutan tugas berdasarkan deadline dan bobot prioritas.
+- **Analisis AI (Groq API)**: Prediksi skor beban studi (1-10), ringkasan kondisi, dan tips manajemen waktu.
+- **Micro-Stepping**: Fitur AI untuk memecah tugas terberat menjadi 3 langkah konkret.
+- **Chatbot Asisten Akademik**: Konsultasi jadwal berbasis konteks data (meminimalisir halusinasi AI).
+- **CSV Dinamis**: Mengenali berbagai format kolom tugas secara otomatis.
 
 ---
 
-## ✨ Fitur Utama
+TECH STACK
+==========
 
-### 📅 Kalender Interaktif & Tabel Prioritas
-- Heatmap 5 level warna untuk memantau kepadatan deadline.
-- Tabel prioritas otomatis yang mengurutkan tugas berdasarkan urgensi (kritis, mendesak, atau aman).
-
-### 🤖 Analisis & Pemecahan Tugas (AI)
-- **Skor Beban Kognitif:** Prediksi tingkat stres studi (skala 1–10).
-- **Micro-Stepping:** AI secara otomatis mendeteksi tugas terberat dan memecahnya menjadi 3 langkah kecil yang konkret untuk dikerjakan.
-- **Tips Manajemen Waktu:** Rekomendasi teknik belajar yang disesuaikan.
-
-### 💬 Chatbot Asisten Akademik
-- Fitur chat interaktif yang memungkinkan mahasiswa bertanya seputar jadwal (contoh: *"Tugas apa yang harus dikerjakan besok?"*).
-- Menjawab berdasarkan "sumber kebenaran" dari data jadwal yang Anda unggah, sehingga meminimalkan risiko halusinasi AI.
+| Komponen | Teknologi | Fungsi |
+|----------|-----------|--------|
+| Framework | Streamlit | UI Web & Deployment Cloud |
+| Processing | Pandas | Manipulasi CSV, Kalender, Logika Penjadwalan |
+| AI Engine | Groq API | Inference model Llama 3 (Cloud Based) |
+| Bahasa | Python | Bahasa utama logika sistem |
+| Deployment | Streamlit Cloud | Hosting aplikasi secara online |
 
 ---
- 
-## 🌿 Struktur Branch
- 
-Repositori ini memiliki **dua versi aplikasi** dalam branch yang berbeda, disesuaikan dengan kebutuhan dan kondisi jaringan:
- 
+
+ARSITEKTUR & STRUKTUR BRANCH
+============================
+
+CogniPace menggunakan *Hybrid Architecture*. Proses kritis tetap dilakukan oleh kode Python, sementara proses kreatif diserahkan ke AI.
+
+**Versi Aplikasi:**
+- `streamlit`: Versi Online (Groq API).
+- `ollama`: Versi Offline (AI Lokal).
+
+**Diagram Alur:**
+1. Input CSV -> 2. Deteksi Kolom & Parsing (Pandas) -> 3. Perhitungan Skor & Kalender (Deterministik) -> 4. Panggilan API ke Groq/Ollama (AI) -> 5. Output di Dashboard.
+
+---
+
+ALASAN PEMILIHAN TEKNOLOGI
+==========================
+
+1. **Python & Pandas**
+   Menjamin akurasi 100% untuk data tanggal dan perhitungan sisa hari. Logika ini bersifat faktual, sehingga tidak boleh diserahkan ke AI agar tidak terjadi kesalahan perhitungan.
+
+2. **Streamlit**
+   Pilihan terbaik untuk mengubah skrip data science menjadi aplikasi web fungsional yang cepat dan profesional.
+
+3. **Groq API**
+   Memungkinkan AI berjalan di *Cloud*, sehingga aplikasi tetap cepat diakses tanpa membebani RAM/GPU laptop pengguna. Respons model sangat cepat dibandingkan API lainnya.
+
+---
+
+CARA MENJALANKAN LOKAL
+===============================
+
+### Langkah 1: Clone atau Download Repositori
+
+**Menggunakan Git:**
+```bash
+git clone https://github.com/TaKakun33/ProjectAI-2026.git
+cd ProjectAI-2026
 ```
-ProjectAI-2026/
-├── main          ← Branch ini (README & gambaran umum proyek)
-├── ollama        ← Versi OFFLINE — AI lokal via Ollama
-└── streamlit     ← Versi ONLINE  — AI cloud via Groq API
+
+**Atau download ZIP** dari tombol hijau "Code" → "Download ZIP", lalu ekstrak.
+
+---
+
+### Langkah 2: Buat Virtual Environment (Direkomendasikan)
+
+```bash
+# Buat virtual environment
+python -m venv venv
+
+# Aktifkan virtual environment
+# Windows:
+venv\Scripts\activate
+
+# macOS / Linux:
+source venv/bin/activate
 ```
- 
----
- 
-## 🔀 Pilih Versi yang Sesuai
- 
-| | Branch `ollama` | Branch `streamlit` |
-|---|---|---|
-| **Koneksi** | ✅ Bisa offline | 🌐 Butuh internet |
-| **AI Engine** | Ollama (lokal) | Groq API (cloud) |
-| **Model** | llama3.1:8b / phi3 / mistral | llama-3.1-8b-instant (gratis) |
-| **Kecepatan AI** | Tergantung hardware | ⚡ Sangat cepat |
-| **Setup** | Lebih panjang (install Ollama) | Lebih cepat (cukup API key) |
-| **Biaya** | Gratis sepenuhnya | Gratis (Groq free tier) |
-| **Cocok untuk** | Privasi tinggi, tanpa internet | Demo cepat, laptop low-spec |
- 
+
 ---
 
-## 📦 Branch `ollama` — Versi Offline
- 
-Gunakan branch ini jika kamu ingin menjalankan AI **100% lokal** tanpa mengirim data ke server manapun. <br>
-➡️ Lihat **[README branch ollama](https://github.com/TaKakun33/ProjectAI-2026/blob/Ollama/README.md)** untuk panduan instalasi lengkap.
+### Langkah 3: Install Dependensi Python
 
-## 🌐 Akses Prototipe (Live Demo)
+```bash
+pip install ollama streamlit pandas
+```
 
-Anda dapat mencoba aplikasi CogniPace AI secara langsung melalui web tanpa perlu melakukan instalasi di komputer Anda:
-> **🔗 [Klik di sini untuk membuka CogniPace AI](https://cognipace.streamlit.app)**
+Paket yang akan diinstall:
+
+| Paket | Versi Minimum | Fungsi |
+|-------|--------------|--------|
+| `streamlit` | 1.35.0 | Framework UI web |
+| `pandas` | 2.0.0 | Pengolahan data CSV |
+| `ollama` | 0.2.0 | Koneksi ke Ollama local LLM |
+
+---
+
+### Langkah 4: Jalankan Server Ollama
+
+Buka **terminal/command prompt baru** (terpisah dari terminal aplikasi), lalu jalankan:
+
+```bash
+ollama serve
+```
+
+Biarkan terminal ini tetap terbuka selama menggunakan aplikasi.
+
+> **Catatan:** Di beberapa sistem, Ollama otomatis berjalan di background setelah instalasi. Jika perintah `ollama serve` menampilkan error "address already in use", berarti Ollama sudah berjalan dan kamu bisa langsung ke langkah berikutnya.
+
+---
+
+### Langkah 5: Jalankan Aplikasi
+
+Kembali ke terminal pertama (yang sudah diaktifkan virtual environment), lalu jalankan:
+
+```bash
+streamlit run app.py
+```
+
+Aplikasi akan otomatis terbuka di browser pada alamat:
+```
+http://localhost:8501
+```
+
+ollama pull phi3
+
+
+BATASAN PROTOTYPE
+=================
+
+- Format input terbatas pada file .csv.
+- Akurasi analisis AI bergantung pada kualitas data tugas yang diunggah.
+- Jadwal adalah rekomendasi, tetap memerlukan penyesuaian manual oleh pengguna.
+- Versi Online membutuhkan koneksi internet untuk fitur AI (Chatbot & Analisis).
+
+---
+
+ROADMAP PENGEMBANGAN
+====================
+
+- Integrasi API kalender (Google Calendar).
+- Penambahan fitur autentikasi pengguna.
+- Pelacakan progres penyelesaian tugas (riwayat belajar).
+- Optimasi model AI yang lebih ringan/spesifik untuk komoditas data tertentu.
+
+---
+*Dibuat oleh Tim CogniPace AI - 2026*

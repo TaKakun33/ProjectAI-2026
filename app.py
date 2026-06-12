@@ -609,7 +609,7 @@ with st.sidebar:
 ```"""
     )
     st.divider()
-    st.caption("🧠 CogniPace AI v4\nStreamlit + Pandas + Ollama")
+    st.caption("🧠 CogniPace AI")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.title("🧠 CogniPace AI")
@@ -838,4 +838,4 @@ if uploaded_file is not None:
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.divider()
-st.caption("🧠 CogniPace AI v4 · Python-first + Ollama optional · Streamlit + Pandas")
+st.caption("🧠 CogniPace AI v4")

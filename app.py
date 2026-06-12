@@ -3,7 +3,7 @@ CogniPace AI v4 — Arsitektur Hybrid yang Andal
 ================================================
 Strategi:
   - PYTHON  → kalender, tabel prioritas, jadwal harian (100% deterministik, selalu berhasil)
-  - AI (opsional) → skor beban kognitif, ringkasan analisis, tips manajemen waktu
+  - AI (opsional) → skor beban kognitif, ringkasan analisis, tips manajemen waktu, pemecahan tugas
   AI hanya diminta teks pendek via tag sederhana — tidak ada JSON kompleks.
   Kalender & jadwal tetap muncul meski AI offline / gagal.
 """
@@ -27,7 +27,7 @@ except ImportError:
 # ═══════════════════════════════════════════════
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 
-# Daftar model yang direkomendasikan (diurutkan dari terbaik ke ringan)
+# Daftar model yang direkomendasikan
 MODEL_OPTIONS = [
     "llama3.1:8b",   # Terbaik untuk instruksi
     "phi3",          # Paling ringan
@@ -38,27 +38,20 @@ MODEL_OPTIONS = [
 # ═══════════════════════════════════════════════
 
 ALIAS_KOLOM = {
-    # Nama tugas
     "nama tugas":    "tugas", "nama tugas (simulasi)": "tugas",
     "tugas":         "tugas", "assignment": "tugas", "task": "tugas",
     "kerjaan":       "tugas", "pekerjaan":  "tugas", "kegiatan": "tugas",
-    # Mata kuliah
     "mata kuliah":   "matkul","matkul":     "matkul","subject":  "matkul",
     "course":        "matkul","pelajaran":  "matkul","mapel":    "matkul",
     "kelas":         "matkul",
-    # Deadline
     "deadline":      "deadline","due date":  "deadline","due_date": "deadline",
     "batas waktu":   "deadline","tanggal akhir":"deadline",
     "tanggal deadline":"deadline","tgl deadline":"deadline",
     "jatuh tempo":   "deadline","akhir":     "deadline",
-    # Prioritas
     "prioritas":     "prioritas","priority":  "prioritas",
-    # Estimasi/durasi
     "estimasi waktu":"estimasi","estimasi":  "estimasi","durasi":  "estimasi",
     "estimated time":"estimasi","time":      "estimasi",
-    # Status
     "status":        "status",  "kondisi":   "status","state":   "status",
-    # Tanggal mulai (opsional)
     "tanggal diberikan":"tgl_mulai","tanggal mulai":"tgl_mulai",
     "mulai":         "tgl_mulai","start":    "tgl_mulai",
 }
@@ -72,25 +65,19 @@ BULAN_ID = {
     "august":8,"october":10,"december":12,
 }
 
-
 def deteksi_kolom(df: pd.DataFrame) -> dict:
-    """Mengembalikan mapping {nama_internal: nama_kolom_asli}."""
     mapping = {}
     for col in df.columns:
         key = col.strip().lower()
         if key in ALIAS_KOLOM:
             internal = ALIAS_KOLOM[key]
-            if internal not in mapping:          # ambil yang pertama cocok
+            if internal not in mapping:
                 mapping[internal] = col
     return mapping
 
-
 def parse_tgl(s: str, tahun_default: int = None) -> date | None:
-    """Parse berbagai format tanggal → date object. None jika gagal."""
-    if tahun_default is None:
-        tahun_default = date.today().year
+    if tahun_default is None: tahun_default = date.today().year
     s = str(s).strip()
-    # Coba nama bulan Indonesia/Inggris
     parts = s.replace(",", " ").split()
     for i, p in enumerate(parts):
         bln = BULAN_ID.get(p.lower())
@@ -108,83 +95,49 @@ def parse_tgl(s: str, tahun_default: int = None) -> date | None:
                         except: pass
                     return date(thn, bln, hr)
                 except: pass
-    # Fallback pandas (numerik)
     try:
         r = pd.to_datetime(s, format="mixed", dayfirst=True, errors="raise")
-        if r.year >= 2020:
-            return r.date()
+        if r.year >= 2020: return r.date()
     except: pass
-    # Coba ambil tanggal dari string ISO yang mungkin ada timestamp (2026-06-15T18:00:00Z)
     iso_match = re.match(r"(\d{4}-\d{2}-\d{2})", s)
     if iso_match:
-        try:
-            return date.fromisoformat(iso_match.group(1))
+        try: return date.fromisoformat(iso_match.group(1))
         except: pass
     return None
 
-
 def parse_jam(s) -> int:
-    """Ekstrak angka jam dari string seperti '6 Jam', '4h', '3'. Default 2."""
     if pd.isna(s): return 2
     nums = re.findall(r'\d+', str(s))
     return int(nums[0]) if nums else 2
 
-
-BOBOT_PRI = {
-    "tinggi": 0, "high": 0, "kritis": 0,
-    "sedang": 1, "medium": 1, "normal": 1,
-    "rendah": 2, "low": 2, "ringan": 2,
-}
-
+BOBOT_PRI = {"tinggi": 0, "high": 0, "kritis": 0, "sedang": 1, "medium": 1, "normal": 1, "rendah": 2, "low": 2, "ringan": 2}
 
 def proses_df(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
-    """
-    Menambahkan kolom internal ke DataFrame:
-      _deadline, _hari_tersisa, _jam, _bobot_pri, _skor, _prioritas, _tugas, _matkul, _status
-    """
     today = date.today()
     df = df.copy()
-
-    # Deadline
     if "deadline" in mapping:
         df["_deadline"] = df[mapping["deadline"]].apply(parse_tgl)
     else:
         df["_deadline"] = None
 
-    df["_hari_tersisa"] = df["_deadline"].apply(
-        lambda d: (d - today).days if d else 9999
-    )
-
-    # Estimasi jam
+    df["_hari_tersisa"] = df["_deadline"].apply(lambda d: (d - today).days if d else 9999)
     df["_jam"] = df[mapping["estimasi"]].apply(parse_jam) if "estimasi" in mapping else 2
 
-    # Prioritas
     if "prioritas" in mapping:
-        df["_bobot_pri"] = df[mapping["prioritas"]].apply(
-            lambda x: BOBOT_PRI.get(str(x).lower().strip(), 1)
-        )
-        df["_prioritas"] = df[mapping["prioritas"]].apply(
-            lambda x: str(x).strip()
-        )
+        df["_bobot_pri"] = df[mapping["prioritas"]].apply(lambda x: BOBOT_PRI.get(str(x).lower().strip(), 1))
+        df["_prioritas"] = df[mapping["prioritas"]].apply(lambda x: str(x).strip())
     else:
-        df["_bobot_pri"] = 1
-        df["_prioritas"] = "Sedang"
+        df["_bobot_pri"] = 1; df["_prioritas"] = "Sedang"
 
-    # Skor prioritas (lebih kecil = lebih urgent)
     df["_skor"] = df["_hari_tersisa"] + df["_bobot_pri"] * 2
-
-    # Kolom display
     df["_tugas"]  = df[mapping["tugas"]].apply(str)  if "tugas"  in mapping else "Tugas"
     df["_matkul"] = df[mapping["matkul"]].apply(str) if "matkul" in mapping else "—"
 
-    # Status — filter aktif
     if "status" in mapping:
         selesai_kata = {"selesai","done","complete","completed","finished","sudah"}
-        df["_selesai"] = df[mapping["status"]].apply(
-            lambda x: str(x).lower().strip() in selesai_kata
-        )
+        df["_selesai"] = df[mapping["status"]].apply(lambda x: str(x).lower().strip() in selesai_kata)
     else:
-        df["_selesai"] = False   # anggap semua belum selesai
+        df["_selesai"] = False
 
     return df
 
@@ -194,36 +147,22 @@ def proses_df(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
 # ═══════════════════════════════════════════════
 
 def bangun_beban(df: pd.DataFrame) -> dict:
-    """
-    Bangun dict beban kalender dari DataFrame yang sudah diproses.
-    { "YYYY-MM-DD": { "jumlah": N, "tugas": [{...}] } }
-    Semua tugas ditampilkan di kalender (termasuk yang selesai, dibedakan warna di modal).
-    """
     beban = {}
     for _, r in df.iterrows():
-        if r["_deadline"] is None:
-            continue
+        if r["_deadline"] is None: continue
         key = str(r["_deadline"])
-        if key not in beban:
-            beban[key] = {"jumlah": 0, "tugas": []}
+        if key not in beban: beban[key] = {"jumlah": 0, "tugas": []}
         beban[key]["jumlah"] += 1
         beban[key]["tugas"].append({
-            "tugas":       r["_tugas"],
-            "matkul":      r["_matkul"],
-            "deadline":    key,
-            "prioritas":   r["_prioritas"],
-            "estimasi_jam":r["_jam"],
-            "status":      "Selesai" if r["_selesai"] else "Belum Selesai",
+            "tugas":       r["_tugas"], "matkul":      r["_matkul"],
+            "deadline":    key, "prioritas":   r["_prioritas"],
+            "estimasi_jam":r["_jam"], "status":      "Selesai" if r["_selesai"] else "Belum Selesai",
         })
     return beban
 
-
 def bangun_tabel_prioritas(df: pd.DataFrame) -> pd.DataFrame:
-    """Tabel prioritas — hanya tugas belum selesai, urut dari paling urgent."""
     df_aktif = df[~df["_selesai"] & (df["_deadline"].notna())].copy()
-    if df_aktif.empty:
-        return pd.DataFrame()
-
+    if df_aktif.empty: return pd.DataFrame()
     df_aktif = df_aktif.sort_values("_skor").reset_index(drop=True)
     df_aktif.index += 1
 
@@ -239,45 +178,28 @@ def bangun_tabel_prioritas(df: pd.DataFrame) -> pd.DataFrame:
     if "_matkul" in df_aktif.columns: kolom["_matkul"] = "Mata Kuliah"
 
     df_out = pd.DataFrame()
-    for k, v in kolom.items():
-        df_out[v] = df_aktif[k].values
-
-    df_out["Deadline"]      = df_aktif["_deadline"].apply(
-        lambda d: d.strftime("%d %b %Y") if d else "—"
-    ).values
-    df_out["Hari Tersisa"]  = df_aktif["_hari_tersisa"].apply(
-        lambda h: h if h != 9999 else "?"
-    ).values
+    for k, v in kolom.items(): df_out[v] = df_aktif[k].values
+    df_out["Deadline"]      = df_aktif["_deadline"].apply(lambda d: d.strftime("%d %b %Y") if d else "—").values
+    df_out["Hari Tersisa"]  = df_aktif["_hari_tersisa"].apply(lambda h: h if h != 9999 else "?").values
     df_out["Prioritas"]     = df_aktif["_prioritas"].values
     df_out["Estimasi"]      = df_aktif["_jam"].apply(lambda j: f"{j} jam").values
     df_out["Urgensi"]       = df_aktif["_hari_tersisa"].apply(urgensi).values
     df_out.index = range(1, len(df_out) + 1)
     return df_out
 
-
 def bangun_jadwal_harian(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Generate jadwal harian dari Python murni:
-    - Mulai dari hari ini
-    - Urutkan berdasarkan skor prioritas
-    - 1 tugas per hari (2 tugas jika total jam hari itu ≤ 5)
-    - Sisipkan peringatan jika ada deadline yang terlewat
-    """
     df_aktif = df[~df["_selesai"] & (df["_deadline"].notna())].sort_values("_skor").copy()
-    if df_aktif.empty:
-        return pd.DataFrame()
+    if df_aktif.empty: return pd.DataFrame()
 
     today = date.today()
     jadwal = []
     hari = today
-    max_jam_per_hari = 6   # batas jam kerja per hari
 
     for _, r in df_aktif.iterrows():
         dl = r["_deadline"]
         jam = r["_jam"]
         hari_tersisa = r["_hari_tersisa"]
 
-        # Jika deadline sudah lewat, tandai dengan ⚠️
         if hari_tersisa < 0:
             catatan = "⚠️ Deadline sudah terlewat! Selesaikan sesegera mungkin."
             tgl_kerjakan = today
@@ -294,31 +216,21 @@ def bangun_jadwal_harian(df: pd.DataFrame) -> pd.DataFrame:
 
         jadwal.append({
             "Tanggal Kerjakan": tgl_kerjakan.strftime("%d %b %Y (%a)"),
-            "Nama Tugas":       r["_tugas"],
-            "Mata Kuliah":      r["_matkul"],
-            "Prioritas":        r["_prioritas"],
-            "Estimasi":         f"{jam} jam",
-            "Deadline":         dl.strftime("%d %b %Y"),
-            "Catatan":          catatan,
+            "Nama Tugas":       r["_tugas"], "Mata Kuliah":      r["_matkul"],
+            "Prioritas":        r["_prioritas"], "Estimasi":         f"{jam} jam",
+            "Deadline":         dl.strftime("%d %b %Y"), "Catatan":          catatan,
         })
-
     return pd.DataFrame(jadwal)
 
 
 # ═══════════════════════════════════════════════
 # BAGIAN 3: AI — HANYA UNTUK ANALISIS TEKS
-# Diminta 3 hal sederhana via tag XML, bukan JSON
 # ═══════════════════════════════════════════════
 
 def panggil_ai_analisis(csv_str: str, kolom_info: str, model: str) -> str:
-    """
-    AI hanya diminta menganalisis teks dan mengembalikan 3 hal via tag XML:
-      <skor>angka</skor>
-      <ringkasan>teks</ringkasan>
-      <tips>teks</tips>
-    Jauh lebih reliabel dibanding meminta JSON kompleks.
-    """
+    """ AI menganalisis teks dengan tambahan pemecahan tugas (fokus) via tag XML. """
     hari_ini = date.today().strftime("%d %B %Y")
+
     prompt = f"""Kamu adalah AI Asisten Akademik. Hari ini {hari_ini}.
 
 Data tugas mahasiswa:
@@ -332,6 +244,13 @@ Berikan analisis singkat dalam Bahasa Indonesia. Jawab HANYA dengan format berik
 
 <ringkasan>[2-3 kalimat analisis kondisi beban mahasiswa berdasarkan data di atas]</ringkasan>
 
+<fokus>
+Tugas paling berat/menantang dari data di atas adalah [Nama Tugas]. Mulailah mengerjakannya dengan 3 langkah kecil ini:
+1. [Langkah pertama]
+2. [Langkah kedua]
+3. [Langkah ketiga]
+</fokus>
+
 <tips>
 1. [tip konkret pertama]
 2. [tip konkret kedua]
@@ -341,7 +260,7 @@ Berikan analisis singkat dalam Bahasa Indonesia. Jawab HANYA dengan format berik
     response = ollama.chat(
         model=model,
         messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0.3},   # lebih deterministik
+        options={"temperature": 0.4},   # Sedikit dinaikkan agar pemecahan tugas lebih bervariasi
     )
     return response["message"]["content"]
 
@@ -361,6 +280,7 @@ def parse_ai_teks(teks: str) -> dict:
     return {
         "skor":      skor,
         "ringkasan": ekstrak("ringkasan"),
+        "fokus":     ekstrak("fokus"),
         "tips":      ekstrak("tips"),
     }
 
@@ -552,9 +472,10 @@ with st.sidebar:
         help="llama3.1:8b paling bagus. phi3 paling ringan tapi sering gagal JSON.",
     )
     st.caption(
-        "**Rekomendasi:**\n"
-        "- `llama3.1:8b` — terbaik, ~5GB\n"
-        "- `phi3` — ringan, ~2.3GB (kadang tidak konsisten)\n\n"
+        """**Rekomendasi:**
+- `llama3.1:8b` — terbaik, ~5GB
+- `phi3` — ringan, ~2.3GB (kadang tidak konsisten)
+```"""
     )
     st.divider()
     st.caption("🧠 CogniPace AI v4\nStreamlit + Pandas + Ollama")
@@ -563,14 +484,14 @@ with st.sidebar:
 st.title("🧠 CogniPace AI")
 st.markdown(
     "**Asisten Manajemen Beban Kognitif Mahasiswa**  \n"
-    "Upload CSV tugas kemudian AI akan berikan analisis & tips"
+    "Upload CSV tugas → Python generate kalender & jadwal → AI berikan analisis & tips"
 )
 st.divider()
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 st.subheader("📂 Upload Data Tugas")
 st.caption(
-    "Format CSV bebas minimal kolom **nama tugas** dan **deadline**. "
+    "Format CSV bebas — minimal kolom **nama tugas** dan **deadline**. "
     "Kolom lain (prioritas, estimasi waktu, matkul, status) opsional."
 )
 uploaded_file = st.file_uploader("Pilih file .csv", type=["csv"])
@@ -609,7 +530,7 @@ if uploaded_file is not None:
         df_jadwal   = bangun_jadwal_harian(df_proc)
 
         # ── PANGGIL AI (opsional, hanya untuk teks) ──────────────────────────
-        ai_hasil = {"skor": None, "ringkasan": "", "tips": ""}
+        ai_hasil = {"skor": None, "ringkasan": "", "fokus": "", "tips": ""}
         ai_error = None
 
         if not OLLAMA_TERSEDIA:
@@ -661,7 +582,8 @@ if uploaded_file is not None:
         # ── Kalender ─────────────────────────────────────────────────────────
         st.subheader("📅 Kalender Beban Tugas")
         st.caption(
-            "Kalender penyebaran tugas dengan berisi detail tugas, prioritas & estimasi"
+            "Navigasi dengan **← Prev / Next →** · "
+            "**Klik tanggal berwarna** → detail tugas, prioritas & estimasi"
         )
 
         if beban_dict:
@@ -679,7 +601,7 @@ if uploaded_file is not None:
 
         # ── Tabel prioritas ───────────────────────────────────────────────────
         st.subheader("📋 Tabel Prioritas Pengerjaan Tugas")
-        st.caption("Urutan: deadline terdekat + prioritas tertinggi. kerjakan dari baris paling atas")
+        st.caption("Urutan: deadline terdekat + prioritas tertinggi → kerjakan dari baris paling atas")
 
         if not df_prio.empty:
             def warnai(row):
@@ -700,7 +622,7 @@ if uploaded_file is not None:
 
         # ── Jadwal harian ─────────────────────────────────────────────────────
         st.subheader("🗓️ Rekomendasi Jadwal Harian")
-        st.caption("Jadwal otomatis dari AI — 1 tugas per hari, diurutkan dari yang paling mendesak")
+        st.caption("Jadwal otomatis dari algoritma Python — 1 tugas per hari, diurutkan dari yang paling mendesak")
 
         if not df_jadwal.empty:
             def warnai_jadwal(row):
@@ -726,15 +648,21 @@ if uploaded_file is not None:
         st.subheader("💡 Analisis & Tips dari AI")
 
         ringkasan = ai_hasil.get("ringkasan","")
+        fokus     = ai_hasil.get("fokus", "") # PERUBAHAN 3: Ambil nilai fokus
         tips      = ai_hasil.get("tips","")
 
         if ringkasan:
-            st.info(f"📊 **Analisis:** {ringkasan}")
+            st.info(f"📊 **Analisis Kondisi:** {ringkasan}")
+
+        # Menampilkan Pemecahan Tugas (Micro-Stepping) dalam kotak sukses
+        if fokus:
+            st.success(f"🎯 **Pemecahan Tugas Terberat (Micro-Stepping):**\n\n{fokus}")
+
         if tips:
-            st.markdown("**🎯 Tips Manajemen Waktu:**")
+            st.markdown("**💡 Tips Manajemen Waktu:**")
             st.markdown(tips)
 
-        if not ringkasan and not tips:
+        if not ringkasan and not tips and not fokus:
             if ai_error:
                 st.info(
                     "💡 AI tidak tersedia. Gunakan kalender dan tabel prioritas di atas "

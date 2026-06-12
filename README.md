@@ -137,7 +137,7 @@ source venv/bin/activate
 ### Langkah 3: Install Dependensi Python
 
 ```bash
-pip install ollama streamlit pandas
+pip install -r requirements.txt
 ```
 
 Paket yang akan diinstall:

@@ -14,7 +14,7 @@
 CogniPace AI adalah prototype aplikasi web yang dirancang untuk membantu mahasiswa mengelola beban kognitif akademik mereka. Dengan mengunggah file CSV berisi data tugas, aplikasi ini akan:
 
 1. **Memvisualisasikan** distribusi deadline dalam bentuk kalender heatmap interaktif
-2. **Memprediksi** skor beban kognitif menggunakan Local LLM (Ollama + phi3)
+2. **Memprediksi** skor beban kognitif menggunakan Local LLM (Ollama)
 3. **Menyusun** jadwal prioritas pengerjaan tugas secara otomatis berdasarkan kedekatan deadline dan tumpukan tugas
 4. **Merekomendasikan** actionable plan harian agar semua tugas selesai tepat waktu
 
@@ -46,6 +46,7 @@ CogniPace AI adalah prototype aplikasi web yang dirancang untuk membantu mahasis
 - Prediksi skor beban kognitif (skala 1–10)
 - Jadwal harian terstruktur (tabel JSON dari AI)
 - Ringkasan analisis dan tips manajemen waktu
+- Fleksibel Pilih model llama3.1:8b (akurat) atau phi3 (ringan) langsung dari aplikasi.
 
 ### 📂 CSV Dinamis
 Aplikasi mengenali **berbagai format kolom** secara otomatis tidak harus menggunakan nama kolom tertentu.
@@ -72,9 +73,13 @@ Ollama adalah runtime untuk menjalankan Large Language Model secara lokal.
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-### 3. Model phi3 (diunduh via Ollama)
-Setelah Ollama terpasang, unduh model phi3 (~2.3 GB):
+### 3. Model AI (diunduh via Ollama)
+Anda dapat memilih antara model llama3.1:8b (untuk akurasi tinggi) atau phi3 (untuk perangkat yang lebih ringan). Unduh model yang diinginkan di terminal:
 ```bash
+# Untuk akurasi tinggi
+ollama pull llama3.1:8b
+
+# Untuk perangkat ringan
 ollama pull phi3
 ```
 

@@ -286,7 +286,138 @@ def parse_ai_teks(teks: str) -> dict:
 
 
 # ═══════════════════════════════════════════════
-# BAGIAN 4: KALENDER HTML+JS INTERAKTIF
+# BAGIAN 4: CHATBOT ASISTEN AKADEMIK
+# ═══════════════════════════════════════════════
+
+def bangun_konteks_jadwal(df_jadwal: pd.DataFrame) -> str:
+    """Ubah df_jadwal menjadi teks konteks yang ringkas untuk prompt chatbot."""
+    if df_jadwal.empty:
+        return "Tidak ada tugas aktif saat ini."
+    baris = []
+    for _, r in df_jadwal.iterrows():
+        baris.append(
+            f"- [{r.get('Tanggal Kerjakan','?')}] {r.get('Nama Tugas','?')} "
+            f"({r.get('Mata Kuliah','—')}) | Deadline: {r.get('Deadline','?')} | "
+            f"Estimasi: {r.get('Estimasi','?')} | Prioritas: {r.get('Prioritas','?')} | "
+            f"{r.get('Catatan','')}"
+        )
+    return "\n".join(baris)
+
+
+def panggil_chatbot(riwayat: list, pesan_baru: str, konteks_jadwal: str, model: str) -> str:
+    """
+    Kirim pesan ke Ollama dengan konteks jadwal sebagai sistem prompt.
+    riwayat: list of dict {"role": "user"/"assistant", "content": "..."}
+    """
+    hari_ini = date.today().strftime("%A, %d %B %Y")
+    system_prompt = f"""Kamu adalah Asisten Akademik bernama CogniPace. Hari ini {hari_ini}.
+
+Kamu membantu mahasiswa memahami dan merencanakan jadwal belajar mereka.
+Jawab dalam Bahasa Indonesia, singkat, ramah, dan to-the-point.
+Jangan mengarang informasi di luar data jadwal yang diberikan.
+
+=== DATA JADWAL MAHASISWA (Gunakan ini sebagai sumber kebenaran) ===
+{konteks_jadwal}
+=== AKHIR DATA ===
+
+Gunakan data di atas untuk menjawab pertanyaan spesifik tentang tugas, deadline, dan prioritas.
+Jika pertanyaan tidak berkaitan dengan data jadwal, jawab sesuai pengetahuan umummu tentang tips belajar."""
+
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in riwayat:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": pesan_baru})
+
+    response = ollama.chat(
+        model=model,
+        messages=messages,
+        options={"temperature": 0.5},
+    )
+    return response["message"]["content"]
+
+
+def tampilkan_chatbot(df_jadwal: pd.DataFrame, model: str):
+    """Render UI chatbot interaktif di bawah dashboard."""
+    st.subheader("💬 Chatbot Asisten Akademik")
+    st.caption(
+        "Tanya langsung tentang jadwalmu — "
+        "contoh: *\"Tugas mana yang harus dikerjakan besok?\"* atau *\"Berapa total estimasi tugas minggu ini?\"*"
+    )
+
+    # Inisialisasi session state untuk riwayat chat
+    if "chat_riwayat" not in st.session_state:
+        st.session_state["chat_riwayat"] = []
+    if "chat_konteks" not in st.session_state:
+        st.session_state["chat_konteks"] = ""
+
+    # Perbarui konteks jika df_jadwal berubah (simpan hash sederhana)
+    konteks_baru = bangun_konteks_jadwal(df_jadwal)
+    if st.session_state["chat_konteks"] != konteks_baru:
+        st.session_state["chat_konteks"] = konteks_baru
+        # Reset riwayat jika data berubah agar tidak bingung
+        if st.session_state["chat_riwayat"]:
+            st.session_state["chat_riwayat"] = []
+            st.info("ℹ️ Data jadwal diperbarui. Riwayat chat direset.")
+
+    # Tampilkan riwayat percakapan
+    riwayat = st.session_state["chat_riwayat"]
+    if riwayat:
+        for msg in riwayat:
+            with st.chat_message(msg["role"], avatar="🧑‍🎓" if msg["role"] == "user" else "🤖"):
+                st.markdown(msg["content"])
+    else:
+        st.info("👋 Belum ada percakapan. Ketik pertanyaanmu di kotak di bawah!")
+
+    # Input pengguna
+    pesan_user = st.chat_input("Tanya tentang jadwal atau tipsmu…", key="chat_input")
+
+    if pesan_user:
+        if not OLLAMA_TERSEDIA:
+            st.warning(
+                "⚠️ Library `ollama` tidak ditemukan. "
+                "Jalankan `pip install ollama` lalu restart aplikasi."
+            )
+            return
+
+        # Tampilkan pesan user segera
+        with st.chat_message("user", avatar="🧑‍🎓"):
+            st.markdown(pesan_user)
+
+        # Panggil AI
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("CogniPace sedang berpikir…"):
+                try:
+                    jawaban = panggil_chatbot(
+                        riwayat=riwayat,
+                        pesan_baru=pesan_user,
+                        konteks_jadwal=st.session_state["chat_konteks"],
+                        model=model,
+                    )
+                    st.markdown(jawaban)
+                    # Simpan ke riwayat
+                    st.session_state["chat_riwayat"].append(
+                        {"role": "user", "content": pesan_user}
+                    )
+                    st.session_state["chat_riwayat"].append(
+                        {"role": "assistant", "content": jawaban}
+                    )
+                except Exception as e:
+                    err_msg = str(e)
+                    st.warning(
+                        f"⚠️ Chatbot tidak bisa menjawab saat ini. "
+                        f"Pastikan Ollama berjalan (`ollama serve`). "
+                        f"Detail: {err_msg[:120]}"
+                    )
+
+    # Tombol reset riwayat
+    if riwayat:
+        if st.button("🗑️ Hapus Riwayat Chat", use_container_width=False, key="reset_chat"):
+            st.session_state["chat_riwayat"] = []
+            st.rerun()
+
+
+# ═══════════════════════════════════════════════
+# BAGIAN 5: KALENDER HTML+JS INTERAKTIF
 # ═══════════════════════════════════════════════
 
 def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int) -> str:
@@ -549,10 +680,34 @@ if uploaded_file is not None:
                     ai_error = str(e)
                     st.session_state["ai_raw"] = ""
 
+        # ── SIMPAN HASIL KE SESSION STATE agar tetap tampil saat chat re-run ─
+        st.session_state["hasil_analisis"] = {
+            "beban_dict":  beban_dict,
+            "df_prio":     df_prio,
+            "df_jadwal":   df_jadwal,
+            "ai_hasil":    ai_hasil,
+            "ai_error":    ai_error,
+            "total_aktif": total_aktif,
+        }
+
         st.success("✅ Kalender & jadwal siap!")
 
+    # ════════════════════════════════════════
+    # OUTPUT — dibaca dari session_state agar tetap tampil saat chatbot re-run
+    # ════════════════════════════════════════
+    if "hasil_analisis" not in st.session_state:
+        pass  # Belum ada analisis, tidak tampilkan apa-apa
+    else:
+        _h          = st.session_state["hasil_analisis"]
+        beban_dict  = _h["beban_dict"]
+        df_prio     = _h["df_prio"]
+        df_jadwal   = _h["df_jadwal"]
+        ai_hasil    = _h["ai_hasil"]
+        ai_error    = _h["ai_error"]
+        total_aktif = _h["total_aktif"]
+
         # ════════════════════════════════════════
-        # OUTPUT
+        # OUTPUT (sebelumnya di dalam button, sekarang di luar)
         # ════════════════════════════════════════
 
         # ── Metrik ───────────────────────────────────────────────────────────
@@ -675,6 +830,11 @@ if uploaded_file is not None:
         if st.session_state.get("ai_raw"):
             with st.expander("🛠️ Respons mentah AI (debug)"):
                 st.text(st.session_state["ai_raw"])
+
+        st.divider()
+
+        # ── Chatbot Asisten Akademik ──────────────────────────────────────────
+        tampilkan_chatbot(df_jadwal, model_pilihan)
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.divider()

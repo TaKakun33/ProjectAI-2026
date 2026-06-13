@@ -65,24 +65,61 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
   fill: #31333f !important;
 }
-/* File pill setelah upload — paksa putih + teks gelap */
-[data-testid="stFileUploaderFile"],
+/* File pill container — putih bersih */
+[data-testid="stFileUploaderFile"] {
+  background-color: #ffffff !important;
+  border: 1px solid #d0d3db !important;
+  border-radius: 8px !important;
+}
 [data-testid="stFileUploaderFile"] > div,
 [data-testid="stFileUploaderFile"] * {
   background-color: #ffffff !important;
   color: #31333f !important;
   border-color: #d0d3db !important;
 }
+
+/* Sembunyikan thumbnail/icon bawaan yang dark */
+[data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileData"] > div:first-child,
+[data-testid="stFileUploaderFile"] img,
+[data-testid="stFileUploaderFile"] [class*="thumb"],
+[data-testid="stFileUploaderFile"] [class*="preview"],
+[data-testid="stFileUploaderFile"] > div > div:first-child > div:first-child {
+  background-color: #e8edf5 !important;
+  border-radius: 6px !important;
+}
+/* Paksa semua SVG di area file pill jadi abu gelap */
+[data-testid="stFileUploaderFile"] svg,
+[data-testid="stFileUploaderFile"] svg path,
+[data-testid="stFileUploaderFile"] svg rect {
+  fill: #4a5568 !important;
+  color: #4a5568 !important;
+  background: transparent !important;
+}
+/* Sembunyikan background gelap di wrapper icon */
+[data-testid="stFileUploaderFile"] > div > div:first-child {
+  background-color: #eef1f7 !important;
+  border-radius: 6px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* Tombol X hapus file */
 [data-testid="stFileUploaderDeleteBtn"],
 [data-testid="stFileUploaderDeleteBtn"] * {
   background-color: #f0f2f6 !important;
   color: #31333f !important;
+  border-radius: 50% !important;
 }
-/* Icon di file pill */
-[data-testid="stFileUploader"] svg {
+[data-testid="stFileUploaderDeleteBtn"] svg,
+[data-testid="stFileUploaderDeleteBtn"] svg path {
   fill: #31333f !important;
-  color: #31333f !important;
+}
+
+/* Icon di dropzone */
+[data-testid="stFileUploaderDropzone"] svg,
+[data-testid="stFileUploaderDropzone"] svg path {
+  fill: #4a5568 !important;
+  color: #4a5568 !important;
 }
 /* Semua elemen dalam zona upload */
 [data-testid="stFileUploader"] * { color: #31333f !important; }

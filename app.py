@@ -1072,7 +1072,7 @@ if uploaded_file is not None:
         for i, (_, row) in enumerate(df.iterrows()):
             bg = "#ffffff" if i % 2 == 0 else "#f8f9fa"
             cells = "".join(f"<td>{row[c]}</td>" for c in cols)
-            rows += f'<tr style="background:{bg}">{cells}</tr>'
+            rows += f'<tr style="background:{bg}"><td style="color:#a0aec0;font-size:.75rem">{i}</td>{cells}</tr>'
         return f"""<style>
 .prev-wrap{{overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0;background:#fff;margin-bottom:8px}}
 .prev-wrap table{{width:100%;border-collapse:collapse;font-size:.83rem;font-family:'Segoe UI',sans-serif}}

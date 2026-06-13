@@ -408,35 +408,7 @@ def tampilkan_chatbot(df_jadwal: pd.DataFrame, model: str):
 
 # BAGIAN 5: KALENDER HTML+JS INTERAKTIF
 
-def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int, is_dark: bool = False) -> str:
-    _dark_vars = """:root{
-  --c-month:#e8eaf0;
-  --c-hdr:#8899aa;
-  --c-legend:#8899aa;
-  --lb-border:rgba(255,255,255,.1);
-  --cell-c0-bg:#1e2330;--cell-c0-fg:#4a5568;--cell-c0-bd:#2d3348;
-  --cell-c1-bg:#0d2137;--cell-c1-fg:#90cdf4;--cell-c1-bd:#1a4a6e;
-  --cell-c2-bg:#2a2000;--cell-c2-fg:#f6e05e;--cell-c2-bd:#6b5300;
-  --cell-c3-bg:#2d1800;--cell-c3-fg:#fbd38d;--cell-c3-bd:#7c3a00;
-  --cell-c4-bg:#2d1200;--cell-c4-fg:#fc8181;--cell-c4-bd:#922b00;
-  --cell-c5-bg:#7b0d0d;--cell-c5-fg:#fff5f5;--cell-c5-bd:#c53030;
-  --today-ring:#63b3ed;
-  --badge-bg:rgba(255,255,255,.15);
-  --chip-bg:rgba(255,255,255,.08);
-  --chip-pt:#fc8181;--chip-ps:#f6ad55;--chip-pr:#68d391;
-  --overlay-bg:rgba(0,0,0,.75);
-  --modal-bg:#1a2035;--modal-bd:#2d3a52;
-  --m-date:#e2e8f0;--m-sub:#718096;
-  --tcard-bg:#242d42;--tcard-bd:#2d3a52;
-  --tc-name:#e2e8f0;--tc-row:#a0aec0;
-  --pt-bg:#3d1515;--pt-fg:#fc8181;
-  --ps-bg:#3d2a00;--ps-fg:#f6ad55;
-  --pr-bg:#0f2d1a;--pr-fg:#68d391;
-  --sdone-bg:#0f2d1a;--sdone-fg:#68d391;
-  --stodo-bg:#3d2a00;--stodo-fg:#f6ad55;
-  --btn-close-bg:#2d3748;--btn-close-fg:#e2e8f0;--btn-close-hover:#3d4a60;
-  --leg-today-bg:#1a2035;
-}""" if is_dark else ""
+def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int) -> str:
     return f"""<!DOCTYPE html>
 <html lang="id">
 <head><meta charset="UTF-8">
@@ -470,7 +442,25 @@ def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int, is_dark: 
   --btn-close-bg:#f0f2f5;--btn-close-fg:#333;--btn-close-hover:#e0e2e5;
   --leg-today-bg:#fff;
 }}
-{_dark_vars}
+html.dark{{
+  --c-month:#e8eaf0;--c-hdr:#8899aa;--c-legend:#8899aa;
+  --lb-border:rgba(255,255,255,.1);
+  --cell-c0-bg:#1e2330;--cell-c0-fg:#4a5568;--cell-c0-bd:#2d3348;
+  --cell-c1-bg:#0d2137;--cell-c1-fg:#90cdf4;--cell-c1-bd:#1a4a6e;
+  --cell-c2-bg:#2a2000;--cell-c2-fg:#f6e05e;--cell-c2-bd:#6b5300;
+  --cell-c3-bg:#2d1800;--cell-c3-fg:#fbd38d;--cell-c3-bd:#7c3a00;
+  --cell-c4-bg:#2d1200;--cell-c4-fg:#fc8181;--cell-c4-bd:#922b00;
+  --cell-c5-bg:#7b0d0d;--cell-c5-fg:#fff5f5;--cell-c5-bd:#c53030;
+  --today-ring:#63b3ed;--badge-bg:rgba(255,255,255,.15);--chip-bg:rgba(255,255,255,.08);
+  --chip-pt:#fc8181;--chip-ps:#f6ad55;--chip-pr:#68d391;
+  --overlay-bg:rgba(0,0,0,.75);--modal-bg:#1a2035;--modal-bd:#2d3a52;
+  --m-date:#e2e8f0;--m-sub:#718096;--tcard-bg:#242d42;--tcard-bd:#2d3a52;
+  --tc-name:#e2e8f0;--tc-row:#a0aec0;--pt-bg:#3d1515;--pt-fg:#fc8181;
+  --ps-bg:#3d2a00;--ps-fg:#f6ad55;--pr-bg:#0f2d1a;--pr-fg:#68d391;
+  --sdone-bg:#0f2d1a;--sdone-fg:#68d391;--stodo-bg:#3d2a00;--stodo-fg:#f6ad55;
+  --btn-close-bg:#2d3748;--btn-close-fg:#e2e8f0;--btn-close-hover:#3d4a60;
+  --leg-today-bg:#1a2035;
+}}
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:'Segoe UI',sans-serif;background:var(--bg-body);padding:6px 10px}}
 .cal-nav{{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}}
@@ -627,6 +617,17 @@ function openM(k,info,d){{
 function closeM(e){{if(e.target===document.getElementById("ov"))closeML();}}
 function closeML(){{document.getElementById("ov").classList.remove("on");}}
 document.addEventListener("keydown",e=>{{if(e.key==="Escape")closeML();}});
+function applyTheme(){{
+  let dark=false;
+  try{{
+    const app=window.parent.document.querySelector('[data-testid="stApp"]');
+    if(app){{const bg=window.parent.getComputedStyle(app).backgroundColor;
+      dark=bg==="rgb(14, 17, 23)"||bg==="rgb(14,17,23)";}}
+  }}catch(e){{dark=window.matchMedia("(prefers-color-scheme:dark)").matches;}}
+  document.documentElement.classList.toggle("dark",dark);
+}}
+applyTheme();
+setInterval(applyTheme,600);
 render();
 </script>
 </body></html>"""
@@ -788,9 +789,8 @@ if uploaded_file is not None:
             thn_awal = date.today().year
             bln_awal = date.today().month - 1
 
-        is_dark = st.get_option("theme.base") == "dark"
         beban_js = json.dumps(beban_dict, ensure_ascii=False)
-        components.html(render_kalender(beban_js, thn_awal, bln_awal, is_dark), height=540, scrolling=False)
+        components.html(render_kalender(beban_js, thn_awal, bln_awal), height=540, scrolling=False)
 
         st.divider()
 
@@ -799,19 +799,8 @@ if uploaded_file is not None:
         st.caption("Urutan: deadline terdekat + prioritas tertinggi → kerjakan dari baris paling atas")
 
         if not df_prio.empty:
-            _tbl_dark = """:root{
-  --t-border:#2d3a52;--t-head-bg:#1a2035;--t-head-fg:#a0aec0;
-  --t-row-fg:#c9d1d9;--t-num-fg:#4a5568;--t-row-hover:rgba(255,255,255,.03);
-  --t-kritis-bg:#3d1515;--t-kritis-fg:#fc8181;
-  --t-mendesak-bg:#3d2a00;--t-mendesak-fg:#f6ad55;
-  --t-perhatikan-bg:#2a2d00;--t-perhatikan-fg:#f6e05e;
-  --t-aman-bg:#0f2d1a;--t-aman-fg:#68d391;
-  --t-urgent-bg:#3d1515;--t-urgent-fg:#fc8181;
-  --t-warning-bg:#3d2a00;--t-warning-fg:#f6ad55;
-  --t-normal-fg:#8899aa;
-}""" if is_dark else ""
-            TABEL_STYLE = f"""<style>
-:root{{
+            TABEL_STYLE = """<style>
+:root{
   --t-border:#e2e8f0;--t-head-bg:#f7f8fa;--t-head-fg:#4a5568;
   --t-row-fg:#2d3748;--t-num-fg:#a0aec0;--t-row-hover:rgba(0,0,0,.03);
   --t-kritis-bg:#fff5f5;--t-kritis-fg:#c53030;
@@ -821,24 +810,47 @@ if uploaded_file is not None:
   --t-urgent-bg:#fff5f5;--t-urgent-fg:#c53030;
   --t-warning-bg:#fffaf0;--t-warning-fg:#c05621;
   --t-normal-fg:#4a5568;
-}}
-{_tbl_dark}
-.tbl-wrap{{overflow-x:auto;border-radius:10px;border:1px solid var(--t-border)}}
-table{{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif}}
-thead tr{{background:var(--t-head-bg);color:var(--t-head-fg);text-align:left}}
-th{{padding:10px 10px;white-space:nowrap;font-weight:600;font-size:.8rem}}
-td{{padding:9px 10px;color:var(--t-row-fg)}}
-tr{{border-top:1px solid var(--t-border)}}
-tr:hover td{{background:var(--t-row-hover)}}
-.num{{color:var(--t-num-fg);width:36px}}
-.kritis{{background:var(--t-kritis-bg)}}.kritis td{{color:var(--t-kritis-fg)}}
-.mendesak{{background:var(--t-mendesak-bg)}}.mendesak td{{color:var(--t-mendesak-fg)}}
-.perhatikan{{background:var(--t-perhatikan-bg)}}.perhatikan td{{color:var(--t-perhatikan-fg)}}
-.aman{{background:var(--t-aman-bg)}}.aman td{{color:var(--t-aman-fg)}}
-.urgent{{background:var(--t-urgent-bg)}}.urgent td{{color:var(--t-urgent-fg)}}
-.warning{{background:var(--t-warning-bg)}}.warning td{{color:var(--t-warning-fg)}}
-.normal td{{color:var(--t-normal-fg)}}
-</style>"""
+}
+.tbl-wrap.dark{
+  --t-border:#2d3a52;--t-head-bg:#1a2035;--t-head-fg:#a0aec0;
+  --t-row-fg:#c9d1d9;--t-num-fg:#4a5568;--t-row-hover:rgba(255,255,255,.03);
+  --t-kritis-bg:#3d1515;--t-kritis-fg:#fc8181;
+  --t-mendesak-bg:#3d2a00;--t-mendesak-fg:#f6ad55;
+  --t-perhatikan-bg:#2a2d00;--t-perhatikan-fg:#f6e05e;
+  --t-aman-bg:#0f2d1a;--t-aman-fg:#68d391;
+  --t-urgent-bg:#3d1515;--t-urgent-fg:#fc8181;
+  --t-warning-bg:#3d2a00;--t-warning-fg:#f6ad55;
+  --t-normal-fg:#8899aa;
+}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--t-border)}
+table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif}
+thead tr{background:var(--t-head-bg);color:var(--t-head-fg);text-align:left}
+th{padding:10px 10px;white-space:nowrap;font-weight:600;font-size:.8rem}
+td{padding:9px 10px;color:var(--t-row-fg)}
+tr{border-top:1px solid var(--t-border)}
+tr:hover td{background:var(--t-row-hover)}
+.num{color:var(--t-num-fg);width:36px}
+.kritis{background:var(--t-kritis-bg)}.kritis td{color:var(--t-kritis-fg)}
+.mendesak{background:var(--t-mendesak-bg)}.mendesak td{color:var(--t-mendesak-fg)}
+.perhatikan{background:var(--t-perhatikan-bg)}.perhatikan td{color:var(--t-perhatikan-fg)}
+.aman{background:var(--t-aman-bg)}.aman td{color:var(--t-aman-fg)}
+.urgent{background:var(--t-urgent-bg)}.urgent td{color:var(--t-urgent-fg)}
+.warning{background:var(--t-warning-bg)}.warning td{color:var(--t-warning-fg)}
+.normal td{color:var(--t-normal-fg)}
+</style>
+<script>
+(function(){
+  function applyTheme(){
+    var app=document.querySelector('[data-testid="stApp"]');
+    var dark=app&&getComputedStyle(app).backgroundColor==='rgb(14, 17, 23)';
+    document.querySelectorAll('.tbl-wrap').forEach(function(w){
+      w.classList.toggle('dark',!!dark);
+    });
+  }
+  applyTheme();
+  setInterval(applyTheme,600);
+})();
+</script>"""
 
             def kelas_prio(row):
                 u = row.get("Urgensi","")

@@ -72,39 +72,16 @@ p, h1, h2, h3, h4, h5, h6, li,
   border: 1px solid #d0d3db !important;
   border-radius: 8px !important;
   box-shadow: none !important;
+  color-scheme: light !important;
 }
-[data-testid="stFileUploaderFile"] *,
 [data-testid="stFileUploaderFile"] > div,
 [data-testid="stFileUploaderFile"] > div > div,
-[data-testid="stFileUploaderFile"] > div > div > div,
 [data-testid="stFileUploaderFileData"],
-[data-testid="stFileUploaderFileData"] > div,
-[data-testid="stFileUploaderFileData"] > div > div {
+[data-testid="stFileUploaderFileData"] > div {
   background-color: #ffffff !important;
   background: #ffffff !important;
   color-scheme: light !important;
 }
-[data-testid="stFileUploaderFile"] > div > div:first-child,
-[data-testid="stFileUploaderFile"] > div > div:first-child > *,
-[data-testid="stFileUploaderFileData"] > div:first-child,
-[data-testid="stFileUploaderFileData"] > div:first-child > *,
-[data-testid="stFileUploaderFile"] img,
-[data-testid="stFileUploaderFile"] [class*="thumb"],
-[data-testid="stFileUploaderFile"] [class*="Thumb"],
-[data-testid="stFileUploaderFile"] [class*="preview"],
-[data-testid="stFileUploaderFile"] [class*="Preview"],
-[data-testid="stFileUploaderFile"] [class*="icon"],
-[data-testid="stFileUploaderFile"] [class*="Icon"],
-[data-testid="stFileUploaderFile"] [class*="thumbnail"],
-[data-testid="stFileUploaderFile"] [class*="Thumbnail"] {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
-  border: 1px solid #e0e3eb !important;
-  border-radius: 6px !important;
-  color-scheme: light !important;
-}
-
-/* Teks nama file & ukuran — selalu gelap */
 [data-testid="stFileUploaderFile"] span,
 [data-testid="stFileUploaderFile"] p,
 [data-testid="stFileUploaderFileName"],
@@ -112,6 +89,25 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
   background-color: transparent !important;
   background: transparent !important;
+}
+[data-testid="stFileUploaderFile"] svg,
+[data-testid="stFileUploaderFile"] svg path,
+[data-testid="stFileUploaderFile"] svg rect,
+[data-testid="stFileUploaderFile"] svg circle {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* ── THUMBNAIL / ICON KOTAK KIRI FILE ── */
+[data-testid="stFileUploaderFileSectionFileName"] ~ div,
+[data-testid="stFileUploaderFile"] > div > div:first-child:not([data-testid]) {
+  background-color: #f0f2f6 !important;
+  background: #f0f2f6 !important;
+  border-radius: 6px !important;
+  border: 1px solid #d0d3db !important;
+}
+[data-testid="stFileUploaderFile"] > div > div:first-child:not([data-testid]) svg path {
+  fill: #4a5568 !important;
 }
 
 /* ── TOMBOL X HAPUS FILE ── */

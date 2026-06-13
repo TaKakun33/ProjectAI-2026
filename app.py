@@ -953,6 +953,63 @@ st.caption(
 )
 uploaded_file = st.file_uploader("Pilih file .csv", type=["csv"])
 
+# JS fix: paksa file pill selalu light mode via components.html
+components.html("""<script>
+(function(){
+  function fixFilePill(){
+    try {
+      var doc = window.parent.document;
+      var targets = doc.querySelectorAll(
+        '[data-testid="stFileUploaderFile"], ' +
+        '[data-testid="stFileUploaderFileData"], ' +
+        '[data-testid="stFileUploader"] [class*="uploadedFile"], ' +
+        '[data-testid="stFileUploader"] [class*="UploadedFile"]'
+      );
+      targets.forEach(function(el){
+        // Paksa semua elemen dan child-nya jadi putih/terang
+        el.style.setProperty('background-color','#ffffff','important');
+        el.style.setProperty('background','#ffffff','important');
+        el.style.setProperty('border','1px solid #d0d3db','important');
+        el.style.setProperty('border-radius','8px','important');
+        el.style.setProperty('box-shadow','none','important');
+        el.style.setProperty('color','#31333f','important');
+        el.querySelectorAll('*').forEach(function(c){
+          var bg = window.parent.getComputedStyle(c).backgroundColor;
+          var m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+          // Jika background gelap → paksa putih/abu terang
+          if(m && (+m[1]+ +m[2]+ +m[3]) < 200){
+            c.style.setProperty('background-color','#f0f2f6','important');
+            c.style.setProperty('background','#f0f2f6','important');
+          }
+          c.style.setProperty('color','#31333f','important');
+          // SVG fill
+          if(c.tagName === 'svg' || c.tagName === 'path' || c.tagName === 'rect'){
+            c.style.setProperty('fill','#4a5568','important');
+          }
+        });
+      });
+      // Juga target semua div/span dalam stFileUploader yang punya background gelap
+      var uploaderAll = doc.querySelectorAll('[data-testid="stFileUploader"] *');
+      uploaderAll.forEach(function(el){
+        var bg = window.parent.getComputedStyle(el).backgroundColor;
+        var m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if(m && (+m[1]+ +m[2]+ +m[3]) < 150){
+          el.style.setProperty('background-color','#f0f2f6','important');
+          el.style.setProperty('background','#f0f2f6','important');
+          el.style.setProperty('color','#31333f','important');
+        }
+      });
+    } catch(e){}
+  }
+  fixFilePill();
+  setInterval(fixFilePill, 400);
+  try {
+    var obs = new MutationObserver(fixFilePill);
+    obs.observe(window.parent.document.body, {childList:true, subtree:true});
+  } catch(e){}
+})();
+</script>""", height=0)
+
 if uploaded_file is not None:
     df_raw = pd.read_csv(uploaded_file)
 

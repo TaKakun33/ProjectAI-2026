@@ -65,21 +65,13 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
   fill: #31333f !important;
 }
-/* ── FILE PILL — paksa putih total ── */
+/* ── FILE PILL ── */
 [data-testid="stFileUploaderFile"] {
   background-color: #ffffff !important;
   background: #ffffff !important;
   border: 1px solid #d0d3db !important;
   border-radius: 8px !important;
   box-shadow: none !important;
-  color-scheme: light !important;
-}
-[data-testid="stFileUploaderFile"] > div,
-[data-testid="stFileUploaderFile"] > div > div,
-[data-testid="stFileUploaderFileData"],
-[data-testid="stFileUploaderFileData"] > div {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
   color-scheme: light !important;
 }
 [data-testid="stFileUploaderFile"] span,
@@ -96,18 +88,6 @@ p, h1, h2, h3, h4, h5, h6, li,
 [data-testid="stFileUploaderFile"] svg circle {
   background: transparent !important;
   background-color: transparent !important;
-}
-
-/* ── THUMBNAIL / ICON KOTAK KIRI FILE ── */
-[data-testid="stFileUploaderFileSectionFileName"] ~ div,
-[data-testid="stFileUploaderFile"] > div > div:first-child:not([data-testid]) {
-  background-color: #f0f2f6 !important;
-  background: #f0f2f6 !important;
-  border-radius: 6px !important;
-  border: 1px solid #d0d3db !important;
-}
-[data-testid="stFileUploaderFile"] > div > div:first-child:not([data-testid]) svg path {
-  fill: #4a5568 !important;
 }
 
 /* ── TOMBOL X HAPUS FILE ── */
@@ -981,47 +961,31 @@ st.caption(
 )
 uploaded_file = st.file_uploader("Pilih file .csv", type=["csv"])
 
-# JS fix: sembunyikan icon file & paksa tombol X selalu terlihat
 components.html("""<script>
 (function(){
   function fixFilePill(){
     try {
       var doc = window.parent.document;
-
       doc.querySelectorAll('[data-testid="stFileUploaderFile"]').forEach(function(pill){
-        // Paksa pill putih
         pill.style.setProperty('background-color','#ffffff','important');
         pill.style.setProperty('background','#ffffff','important');
         pill.style.setProperty('border','1px solid #d0d3db','important');
         pill.style.setProperty('border-radius','8px','important');
         pill.style.setProperty('box-shadow','none','important');
-
-        // Periksa setiap child — jika gelap, sembunyikan (itu icon-nya)
-        pill.querySelectorAll('div, span, img, figure').forEach(function(c){
-          var bg = window.parent.getComputedStyle(c).backgroundColor;
-          var m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-          if(m && (+m[1] + +m[2] + +m[3]) < 180){
-            c.style.setProperty('display','none','important');
-            return;
-          }
-          // Juga cek inline style
-          var s = c.getAttribute('style') || '';
-          if(s.indexOf('background') !== -1 && (
-            s.indexOf('rgb(14') !== -1 || s.indexOf('rgb(26') !== -1 ||
-            s.indexOf('rgb(38') !== -1 || s.indexOf('#0e1117') !== -1 ||
-            s.indexOf('#262730') !== -1
-          )){
-            c.style.setProperty('display','none','important');
-            return;
-          }
-          // Elemen yang tidak gelap: paksa putih & teks gelap
-          c.style.setProperty('background-color','#ffffff','important');
-          c.style.setProperty('background','#ffffff','important');
-          c.style.setProperty('color','#31333f','important');
+        pill.style.setProperty('color-scheme','light','important');
+        pill.querySelectorAll('div,span,section,article').forEach(function(el){
+          el.style.setProperty('background-color','#ffffff','important');
+          el.style.setProperty('background','#ffffff','important');
+          el.style.setProperty('color-scheme','light','important');
+        });
+        pill.querySelectorAll('span,p,[data-testid="stFileUploaderFileName"],[data-testid="stFileUploaderFileSize"]').forEach(function(el){
+          el.style.setProperty('color','#31333f','important');
+        });
+        pill.querySelectorAll('svg,path,rect,circle,polyline,line').forEach(function(el){
+          el.style.setProperty('background','transparent','important');
+          el.style.setProperty('background-color','transparent','important');
         });
       });
-
-      // Fix tombol X
       doc.querySelectorAll('[data-testid="stFileUploaderDeleteBtn"]').forEach(function(btn){
         btn.style.setProperty('background-color','#e2e6ee','important');
         btn.style.setProperty('background','#e2e6ee','important');
@@ -1034,25 +998,27 @@ components.html("""<script>
         btn.style.setProperty('min-width','24px','important');
         btn.style.setProperty('padding','0','important');
         btn.style.setProperty('box-shadow','none','important');
-        btn.querySelectorAll('svg, path, rect, circle').forEach(function(s){
+        btn.querySelectorAll('svg,path,rect,circle').forEach(function(s){
           s.style.setProperty('fill','#31333f','important');
           s.style.setProperty('background','transparent','important');
           s.style.setProperty('background-color','transparent','important');
         });
-        btn.onmouseenter = function(){
-          this.style.setProperty('background-color','#f87171','important');
-          this.querySelectorAll('svg,path').forEach(function(s){ s.style.setProperty('fill','#fff','important'); });
-        };
-        btn.onmouseleave = function(){
-          this.style.setProperty('background-color','#e2e6ee','important');
-          this.querySelectorAll('svg,path').forEach(function(s){ s.style.setProperty('fill','#31333f','important'); });
-        };
+        if(!btn._hooked){
+          btn._hooked = true;
+          btn.addEventListener('mouseenter',function(){
+            btn.style.setProperty('background-color','#f87171','important');
+            btn.querySelectorAll('svg,path').forEach(function(s){ s.style.setProperty('fill','#fff','important'); });
+          });
+          btn.addEventListener('mouseleave',function(){
+            btn.style.setProperty('background-color','#e2e6ee','important');
+            btn.querySelectorAll('svg,path').forEach(function(s){ s.style.setProperty('fill','#31333f','important'); });
+          });
+        }
       });
-
     } catch(e){}
   }
   fixFilePill();
-  setInterval(fixFilePill, 300);
+  setInterval(fixFilePill, 200);
   try { new MutationObserver(fixFilePill).observe(window.parent.document.body,{childList:true,subtree:true}); } catch(e){}
 })();
 </script>""", height=0)

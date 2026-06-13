@@ -1035,14 +1035,19 @@ components.html("""<script>
         });
 
         wrap.querySelectorAll('svg').forEach(function(svg){
+          svg.removeAttribute('aria-hidden');
+          svg.removeAttribute('fill');
+          svg.setAttribute('fill','#4a5568');
           svg.style.setProperty('display','block','important');
           svg.style.setProperty('visibility','visible','important');
           svg.style.setProperty('background','transparent','important');
           svg.style.setProperty('color','#4a5568','important');
+          svg.style.setProperty('fill','#4a5568','important');
           svg.querySelectorAll('path').forEach(function(p){
+            p.removeAttribute('fill');
+            p.setAttribute('fill','#4a5568');
             p.style.setProperty('fill','#4a5568','important');
             p.style.setProperty('visibility','visible','important');
-            p.style.setProperty('color','#4a5568','important');
           });
         });
 

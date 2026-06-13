@@ -51,13 +51,53 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
 }
 
-/* File uploader */
+/* ── UPLOAD DATA — paksa light mode ── */
 [data-testid="stFileUploader"] {
   background-color: #f8f9fa !important;
-  border-color: #cccccc !important;
+  border: 2px dashed #cccccc !important;
+  border-radius: 8px !important;
 }
 [data-testid="stFileUploader"] * { color: #31333f !important; }
 [data-testid="stFileUploaderDeleteBtn"] { color: #31333f !important; }
+/* Drag-drop zone */
+[data-testid="stFileUploaderDropzone"] {
+  background-color: #f8f9fa !important;
+  border-color: #cccccc !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] * {
+  color: #31333f !important;
+}
+/* File pill / chip setelah upload */
+[data-testid="stFileUploaderFile"],
+[data-testid="stFileUploaderFileName"] {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+/* ── PREVIEW DATA (st.dataframe) — paksa light mode ── */
+/* Container wrapper */
+[data-testid="stDataFrame"],
+[data-testid="stDataFrameContainer"],
+.stDataFrame,
+iframe[title="st_dataframe"] {
+  background-color: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  color: #31333f !important;
+}
+/* Glide-data-grid (inner iframe) sudah di-handle via inline;
+   tapi wrapper luar perlu putih */
+div[data-testid="stDataFrame"] > div {
+  background-color: #ffffff !important;
+}
+/* Info box kolom terdeteksi (stInfo) */
+[data-testid="stAlert"] {
+  background-color: #e8f4fd !important;
+  border-color: #90c8f0 !important;
+  color: #1a4a6b !important;
+}
+[data-testid="stAlert"] * { color: #1a4a6b !important; }
 
 /* Input & textarea */
 input, textarea {
@@ -113,20 +153,44 @@ li[role="option"]:hover {
   background-color: #f0f2f6 !important;
 }
 
-/* Chat input & bottom bar */
+/* ── CHAT INPUT & BOTTOM BAR — paksa light mode ── */
 [data-testid="stBottom"],
 [data-testid="stBottomBlockContainer"] {
   background-color: #f0f2f6 !important;
   border-top: 1px solid #e0e0e0 !important;
 }
+/* Kotak input chat */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] > div > div {
+  background-color: #ffffff !important;
+  border: 1px solid #d0d3db !important;
+  border-radius: 12px !important;
+}
 [data-testid="stChatInput"] textarea {
   background-color: #ffffff !important;
   color: #31333f !important;
+  caret-color: #31333f !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+  color: #9ea3b0 !important;
 }
 [data-testid="stChatInput"] * { color: #31333f !important; }
+/* Tombol kirim chat */
+[data-testid="stChatInputSubmitButton"],
+[data-testid="stChatInputSubmitButton"] button {
+  background-color: #4f8bf9 !important;
+  border-color: #4f8bf9 !important;
+}
 
 /* Chat messages */
-[data-testid="stChatMessage"] { color: #31333f !important; }
+[data-testid="stChatMessage"] {
+  color: #31333f !important;
+  background-color: #f8f9fa !important;
+  border-radius: 10px !important;
+  border: 1px solid #e8eaef !important;
+}
+[data-testid="stChatMessage"] * { color: #31333f !important; }
 
 /* Metric */
 [data-testid="metric-container"] {

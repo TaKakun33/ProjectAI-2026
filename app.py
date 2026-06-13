@@ -102,21 +102,45 @@ p, h1, h2, h3, h4, h5, h6, li,
 
 /* ── TOMBOL DELETE FILE CHIP ── */
 [data-testid="stFileChipDeleteBtn"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #4a5568 !important;
+}
+[data-testid="stFileChipDeleteBtn"] button {
   background-color: #e9eaf0 !important;
   background: #e9eaf0 !important;
   border-radius: 50% !important;
   border: 1px solid #c0c5d0 !important;
   box-shadow: none !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  color: #4a5568 !important;
 }
-[data-testid="stFileChipDeleteBtn"]:hover {
+[data-testid="stFileChipDeleteBtn"] button:hover {
   background-color: #f87171 !important;
   background: #f87171 !important;
   border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+[data-testid="stFileChipDeleteBtn"] svg {
+  color: #4a5568 !important;
+  fill: #4a5568 !important;
+}
+[data-testid="stFileChipDeleteBtn"] button:hover svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
 }
 [data-testid="stFileChipDeleteBtn"] svg path {
   fill: #4a5568 !important;
+  color: #4a5568 !important;
 }
-[data-testid="stFileChipDeleteBtn"]:hover svg path {
+[data-testid="stFileChipDeleteBtn"] button:hover svg path {
   fill: #ffffff !important;
 }
 

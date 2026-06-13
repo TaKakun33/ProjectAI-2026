@@ -73,13 +73,17 @@ p, h1, h2, h3, h4, h5, h6, li,
   border-radius: 8px !important;
   box-shadow: none !important;
 }
-/* Semua div/span langsung dalam pill */
-[data-testid="stFileUploaderFile"] > div {
+[data-testid="stFileUploaderFile"] *,
+[data-testid="stFileUploaderFile"] > div,
+[data-testid="stFileUploaderFile"] > div > div,
+[data-testid="stFileUploaderFile"] > div > div > div,
+[data-testid="stFileUploaderFileData"],
+[data-testid="stFileUploaderFileData"] > div,
+[data-testid="stFileUploaderFileData"] > div > div {
   background-color: #ffffff !important;
   background: #ffffff !important;
+  color-scheme: light !important;
 }
-
-/* SEMBUNYIKAN kotak/icon di sebelah kiri nama file — semua kemungkinan posisi */
 [data-testid="stFileUploaderFile"] > div > div:first-child,
 [data-testid="stFileUploaderFile"] > div > div:first-child > *,
 [data-testid="stFileUploaderFileData"] > div:first-child,
@@ -93,13 +97,11 @@ p, h1, h2, h3, h4, h5, h6, li,
 [data-testid="stFileUploaderFile"] [class*="Icon"],
 [data-testid="stFileUploaderFile"] [class*="thumbnail"],
 [data-testid="stFileUploaderFile"] [class*="Thumbnail"] {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #e0e3eb !important;
+  border-radius: 6px !important;
+  color-scheme: light !important;
 }
 
 /* Teks nama file & ukuran — selalu gelap */

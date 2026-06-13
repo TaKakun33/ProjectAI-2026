@@ -965,7 +965,6 @@ with st.sidebar:
 - `gemma2-9b-it` — alternatif ringan
 ```"""
     )
-    st.divider()
     st.caption("🧠 CogniPace AI")
 
 # ── Header ────────────────────────────────────────────────────────────────────

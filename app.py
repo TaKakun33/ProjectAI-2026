@@ -419,65 +419,65 @@ body{{font-family:'Segoe UI',sans-serif;background:transparent;padding:6px 10px}
 .cal-nav button{{background:#4a90d9;color:#fff;border:none;border-radius:8px;padding:8px 20px;
   font-size:.95rem;cursor:pointer;transition:background .2s;font-weight:600}}
 .cal-nav button:hover{{background:#2c6fad}}
-.month-lbl{{font-size:1.35rem;font-weight:800;color:#1a1a2e}}
+.month-lbl{{font-size:1.35rem;font-weight:800;color:#e8eaf0}}
 .cal-grid{{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}}
-.hdr{{text-align:center;font-size:.68rem;font-weight:700;color:#999;padding:5px 0;
+.hdr{{text-align:center;font-size:.68rem;font-weight:700;color:#8899aa;padding:5px 0;
   letter-spacing:.05em;text-transform:uppercase}}
 .cell{{border-radius:10px;min-height:78px;padding:7px 6px;border:2px solid transparent;
   transition:transform .15s,box-shadow .15s;font-size:.7rem}}
 .cell.click{{cursor:pointer}}
-.cell.click:hover{{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.18);
+.cell.click:hover{{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.45);
   border-color:#4a90d9!important;z-index:2}}
 .cell.empty{{background:transparent}}
-.cell.c0{{background:#f4f5f7;color:#bbb}}
-.cell.c1{{background:#e8f4fd;border-color:#b3d9f5}}
-.cell.c2{{background:#fff3cd;border-color:#ffc107}}
-.cell.c3{{background:#ffe0b2;border-color:#ff9800}}
-.cell.c4{{background:#ffccbc;border-color:#ff5722}}
-.cell.c5{{background:#e53935;border-color:#b71c1c;color:#fff}}
-.cell.today{{outline:3px solid #1976d2;outline-offset:-2px}}
-.cell.today .dn{{color:#1976d2;font-weight:900}}
+.cell.c0{{background:#1e2330;color:#4a5568;border-color:#2d3348}}
+.cell.c1{{background:#0d2137;border-color:#1a4a6e;color:#90cdf4}}
+.cell.c2{{background:#2a2000;border-color:#6b5300;color:#f6e05e}}
+.cell.c3{{background:#2d1800;border-color:#7c3a00;color:#fbd38d}}
+.cell.c4{{background:#2d1200;border-color:#922b00;color:#fc8181}}
+.cell.c5{{background:#7b0d0d;border-color:#c53030;color:#fff5f5}}
+.cell.today{{outline:3px solid #63b3ed;outline-offset:-2px}}
+.cell.today .dn{{color:#63b3ed;font-weight:900}}
 .dn{{font-size:.9rem;font-weight:700;margin-bottom:4px;display:flex;
   justify-content:space-between;align-items:center}}
-.badge{{background:rgba(0,0,0,.12);border-radius:20px;padding:1px 7px;
+.badge{{background:rgba(255,255,255,.15);border-radius:20px;padding:1px 7px;
   font-size:.6rem;font-weight:800}}
 .c5 .badge{{background:rgba(255,255,255,.25)}}
-.chip{{display:block;background:rgba(0,0,0,.07);border-radius:5px;padding:2px 5px;
+.chip{{display:block;background:rgba(255,255,255,.08);border-radius:5px;padding:2px 5px;
   margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.62rem}}
-.c5 .chip{{background:rgba(255,255,255,.2);color:#fff}}
-.chip.pt{{border-left:3px solid #e53935}}
-.chip.ps{{border-left:3px solid #ff9800}}
-.chip.pr{{border-left:3px solid #4caf50}}
+.c5 .chip{{background:rgba(255,255,255,.15);color:#fff}}
+.chip.pt{{border-left:3px solid #fc8181}}
+.chip.ps{{border-left:3px solid #f6ad55}}
+.chip.pr{{border-left:3px solid #68d391}}
 .legend{{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
-  margin-top:14px;font-size:.7rem;color:#666}}
+  margin-top:14px;font-size:.7rem;color:#8899aa}}
 .leg{{display:flex;align-items:center;gap:5px}}
-.lb{{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}}
+.lb{{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.1);flex-shrink:0}}
 /* Modal */
-.overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+.overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
   z-index:1000;align-items:center;justify-content:center;padding:16px}}
 .overlay.on{{display:flex}}
-.modal{{background:#fff;border-radius:18px;padding:26px;max-width:500px;width:100%;
-  max-height:82vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);
+.modal{{background:#1a2035;border:1px solid #2d3a52;border-radius:18px;padding:26px;max-width:500px;width:100%;
+  max-height:82vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);
   animation:up .22s ease}}
 @keyframes up{{from{{transform:translateY(24px);opacity:0}}to{{transform:translateY(0);opacity:1}}}}
-.m-date{{font-size:1.05rem;font-weight:800;color:#1a1a2e;margin-bottom:3px}}
-.m-sub{{font-size:.78rem;color:#888;margin-bottom:16px}}
-.tcard{{background:#f8f9fa;border-radius:11px;padding:13px 14px;margin-bottom:10px}}
-.tc-name{{font-weight:700;font-size:.92rem;color:#1a1a2e;margin-bottom:6px}}
-.tc-row{{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:#555}}
+.m-date{{font-size:1.05rem;font-weight:800;color:#e2e8f0;margin-bottom:3px}}
+.m-sub{{font-size:.78rem;color:#718096;margin-bottom:16px}}
+.tcard{{background:#242d42;border:1px solid #2d3a52;border-radius:11px;padding:13px 14px;margin-bottom:10px}}
+.tc-name{{font-weight:700;font-size:.92rem;color:#e2e8f0;margin-bottom:6px}}
+.tc-row{{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:#a0aec0}}
 .tc-row span{{display:flex;align-items:center;gap:4px}}
 .pbadge{{display:inline-block;padding:2px 10px;border-radius:20px;
   font-size:.66rem;font-weight:700;margin-top:7px}}
-.pt{{background:#fde8e8;color:#c62828}}
-.ps{{background:#fff3e0;color:#e65100}}
-.pr{{background:#e8f5e9;color:#2e7d32}}
-.sdone{{background:#e8f5e9;color:#2e7d32;font-size:.66rem;font-weight:700;
+.pt{{background:#3d1515;color:#fc8181}}
+.ps{{background:#3d2a00;color:#f6ad55}}
+.pr{{background:#0f2d1a;color:#68d391}}
+.sdone{{background:#0f2d1a;color:#68d391;font-size:.66rem;font-weight:700;
   padding:2px 10px;border-radius:20px;display:inline-block;margin-top:7px;margin-left:6px}}
-.stodo{{background:#fff3e0;color:#e65100;font-size:.66rem;font-weight:700;
+.stodo{{background:#3d2a00;color:#f6ad55;font-size:.66rem;font-weight:700;
   padding:2px 10px;border-radius:20px;display:inline-block;margin-top:7px;margin-left:6px}}
-.btn-close{{width:100%;margin-top:16px;padding:11px;background:#f0f2f5;border:none;
-  border-radius:9px;font-size:.88rem;cursor:pointer;color:#333;font-weight:600;transition:background .2s}}
-.btn-close:hover{{background:#e2e5ea}}
+.btn-close{{width:100%;margin-top:16px;padding:11px;background:#2d3748;border:1px solid #4a5568;
+  border-radius:9px;font-size:.88rem;cursor:pointer;color:#e2e8f0;font-weight:600;transition:background .2s}}
+.btn-close:hover{{background:#3d4a60}}
 </style></head>
 <body>
 <div class="cal-nav">
@@ -487,13 +487,13 @@ body{{font-family:'Segoe UI',sans-serif;background:transparent;padding:6px 10px}
 </div>
 <div class="cal-grid" id="grid"></div>
 <div class="legend">
-  <div class="leg"><div class="lb" style="background:#f4f5f7"></div>Bebas</div>
-  <div class="leg"><div class="lb" style="background:#e8f4fd;border-color:#b3d9f5"></div>1</div>
-  <div class="leg"><div class="lb" style="background:#fff3cd;border-color:#ffc107"></div>2</div>
-  <div class="leg"><div class="lb" style="background:#ffe0b2;border-color:#ff9800"></div>3</div>
-  <div class="leg"><div class="lb" style="background:#ffccbc;border-color:#ff5722"></div>4</div>
-  <div class="leg"><div class="lb" style="background:#e53935"></div>5+ 🚨</div>
-  <div class="leg"><div class="lb" style="outline:3px solid #1976d2;background:#fff"></div>Hari ini</div>
+  <div class="leg"><div class="lb" style="background:#1e2330;border-color:#2d3348"></div>Bebas</div>
+  <div class="leg"><div class="lb" style="background:#0d2137;border-color:#1a4a6e"></div>1</div>
+  <div class="leg"><div class="lb" style="background:#2a2000;border-color:#6b5300"></div>2</div>
+  <div class="leg"><div class="lb" style="background:#2d1800;border-color:#7c3a00"></div>3</div>
+  <div class="leg"><div class="lb" style="background:#2d1200;border-color:#922b00"></div>4</div>
+  <div class="leg"><div class="lb" style="background:#7b0d0d;border-color:#c53030"></div>5+ 🚨</div>
+  <div class="leg"><div class="lb" style="outline:3px solid #63b3ed;background:#1a2035"></div>Hari ini</div>
 </div>
 <div class="overlay" id="ov" onclick="closeM(event)">
   <div class="modal">
@@ -679,9 +679,7 @@ if uploaded_file is not None:
 
         st.success("✅ Kalender & jadwal siap!")
 
-    # ════════════════════════════════════════
     # OUTPUT — dibaca dari session_state agar tetap tampil saat chatbot re-run
-    # ════════════════════════════════════════
     if "hasil_analisis" not in st.session_state:
         pass  # Belum ada analisis, tidak tampilkan apa-apa
     else:
@@ -693,7 +691,7 @@ if uploaded_file is not None:
         ai_error    = _h["ai_error"]
         total_aktif = _h["total_aktif"]
 
-      
+
         # OUTPUT (sebelumnya di dalam button, sekarang di luar)
 
         # ── Metrik ───────────────────────────────────────────────────────────
@@ -747,10 +745,10 @@ if uploaded_file is not None:
         if not df_prio.empty:
             def warnai(row):
                 u = row.get("Urgensi","")
-                if "Terlambat" in u or "Kritis" in u: return ["background-color:#ffe0e0"]*len(row)
-                elif "Mendesak" in u:                 return ["background-color:#fff3e0"]*len(row)
-                elif "Perhatikan" in u:               return ["background-color:#fffde7"]*len(row)
-                else:                                 return ["background-color:#f1f8e9"]*len(row)
+                if "Terlambat" in u or "Kritis" in u: return ["background-color:#3d1515;color:#fc8181"]*len(row)
+                elif "Mendesak" in u:                 return ["background-color:#3d2a00;color:#f6ad55"]*len(row)
+                elif "Perhatikan" in u:               return ["background-color:#2a2d00;color:#f6e05e"]*len(row)
+                else:                                 return ["background-color:#0f2d1a;color:#68d391"]*len(row)
             st.dataframe(
                 df_prio.style.apply(warnai, axis=1),
                 use_container_width=True,
@@ -769,9 +767,9 @@ if uploaded_file is not None:
             def warnai_jadwal(row):
                 c = row.get("Catatan","")
                 if "Deadline HARI INI" in c or "terlewat" in c:
-                    return ["background-color:#ffe0e0"]*len(row)
+                    return ["background-color:#3d1515;color:#fc8181"]*len(row)
                 elif "🔴" in c:
-                    return ["background-color:#fff3e0"]*len(row)
+                    return ["background-color:#3d2a00;color:#f6ad55"]*len(row)
                 else:
                     return [""]*len(row)
             st.dataframe(

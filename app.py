@@ -992,7 +992,7 @@ components.html("""<script>
         wrap.style.setProperty('border','none','important');
         wrap.style.setProperty('box-shadow','none','important');
         wrap.style.setProperty('padding','0','important');
-        wrap.style.setProperty('color','transparent','important');
+        wrap.style.setProperty('color','#4a5568','important');
 
         wrap.querySelectorAll('button').forEach(function(btn){
           btn.style.setProperty('background-color','#e9eaf0','important');
@@ -1007,16 +1007,18 @@ components.html("""<script>
           btn.style.setProperty('justify-content','center','important');
           btn.style.setProperty('padding','0','important');
           btn.style.setProperty('box-shadow','none','important');
+          btn.style.setProperty('color','#4a5568','important');
         });
 
         wrap.querySelectorAll('svg').forEach(function(svg){
-          svg.removeAttribute('aria-hidden');
           svg.style.setProperty('display','block','important');
           svg.style.setProperty('visibility','visible','important');
           svg.style.setProperty('background','transparent','important');
+          svg.style.setProperty('color','#4a5568','important');
           svg.querySelectorAll('path').forEach(function(p){
             p.style.setProperty('fill','#4a5568','important');
             p.style.setProperty('visibility','visible','important');
+            p.style.setProperty('color','#4a5568','important');
           });
         });
 
@@ -1026,10 +1028,14 @@ components.html("""<script>
           if(inner){
             inner.addEventListener('mouseenter',function(){
               inner.style.setProperty('background-color','#f87171','important');
+              inner.style.setProperty('color','#ffffff','important');
+              wrap.querySelectorAll('svg').forEach(function(s){ s.style.setProperty('color','#fff','important'); });
               wrap.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#fff','important'); });
             });
             inner.addEventListener('mouseleave',function(){
               inner.style.setProperty('background-color','#e9eaf0','important');
+              inner.style.setProperty('color','#4a5568','important');
+              wrap.querySelectorAll('svg').forEach(function(s){ s.style.setProperty('color','#4a5568','important'); });
               wrap.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#4a5568','important'); });
             });
           }

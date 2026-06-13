@@ -51,53 +51,41 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
 }
 
-/* ── UPLOAD DATA — paksa light mode ── */
+/* ── UPLOAD DATA — file uploader zona & pill ── */
 [data-testid="stFileUploader"] {
-  background-color: #f8f9fa !important;
-  border: 2px dashed #cccccc !important;
-  border-radius: 8px !important;
+  background-color: #ffffff !important;
 }
-[data-testid="stFileUploader"] * { color: #31333f !important; }
-[data-testid="stFileUploaderDeleteBtn"] { color: #31333f !important; }
-/* Drag-drop zone */
 [data-testid="stFileUploaderDropzone"] {
   background-color: #f8f9fa !important;
-  border-color: #cccccc !important;
+  border: 2px dashed #cccccc !important;
+  border-radius: 10px !important;
 }
+[data-testid="stFileUploaderDropzone"] *,
 [data-testid="stFileUploaderDropzoneInstructions"] * {
   color: #31333f !important;
+  fill: #31333f !important;
 }
-/* File pill / chip setelah upload */
+/* File pill setelah upload — paksa putih + teks gelap */
 [data-testid="stFileUploaderFile"],
-[data-testid="stFileUploaderFileName"] {
+[data-testid="stFileUploaderFile"] > div,
+[data-testid="stFileUploaderFile"] * {
   background-color: #ffffff !important;
   color: #31333f !important;
-  border: 1px solid #e0e0e0 !important;
+  border-color: #d0d3db !important;
 }
-
-/* ── PREVIEW DATA (st.dataframe) — paksa light mode ── */
-/* Container wrapper */
-[data-testid="stDataFrame"],
-[data-testid="stDataFrameContainer"],
-.stDataFrame,
-iframe[title="st_dataframe"] {
-  background-color: #ffffff !important;
-  border: 1px solid #e0e0e0 !important;
-  border-radius: 8px !important;
+/* Tombol X hapus file */
+[data-testid="stFileUploaderDeleteBtn"],
+[data-testid="stFileUploaderDeleteBtn"] * {
+  background-color: #f0f2f6 !important;
   color: #31333f !important;
 }
-/* Glide-data-grid (inner iframe) sudah di-handle via inline;
-   tapi wrapper luar perlu putih */
-div[data-testid="stDataFrame"] > div {
-  background-color: #ffffff !important;
+/* Icon di file pill */
+[data-testid="stFileUploader"] svg {
+  fill: #31333f !important;
+  color: #31333f !important;
 }
-/* Info box kolom terdeteksi (stInfo) */
-[data-testid="stAlert"] {
-  background-color: #e8f4fd !important;
-  border-color: #90c8f0 !important;
-  color: #1a4a6b !important;
-}
-[data-testid="stAlert"] * { color: #1a4a6b !important; }
+/* Semua elemen dalam zona upload */
+[data-testid="stFileUploader"] * { color: #31333f !important; }
 
 /* Input & textarea */
 input, textarea {
@@ -117,7 +105,7 @@ input, textarea {
   border-color: #cccccc !important;
 }
 
-/* Semua popup / dropdown / menu (termasuk ⋮ dan selectbox) */
+/* Semua popup / dropdown / menu */
 [data-baseweb="popover"] > div,
 [data-baseweb="menu"],
 [data-testid="stMainMenuPopover"],
@@ -131,13 +119,8 @@ li[role="option"],
   border: 1px solid #e0e0e0 !important;
   box-shadow: 0 4px 16px rgba(0,0,0,.12) !important;
 }
-[role="option"], li[role="option"] {
-  color: #31333f !important;
-}
-[role="option"]:hover,
-li[role="option"]:hover {
-  background-color: #f0f2f6 !important;
-}
+[role="option"], li[role="option"] { color: #31333f !important; }
+[role="option"]:hover, li[role="option"]:hover { background-color: #f0f2f6 !important; }
 
 /* ⋮ menu items */
 [data-testid="stMainMenuPopover"] ul,
@@ -149,17 +132,14 @@ li[role="option"]:hover {
   color: #31333f !important;
 }
 [data-testid="stMainMenuPopover"] li:hover,
-[data-testid="stMainMenuPopover"] button:hover {
-  background-color: #f0f2f6 !important;
-}
+[data-testid="stMainMenuPopover"] button:hover { background-color: #f0f2f6 !important; }
 
-/* ── CHAT INPUT & BOTTOM BAR — paksa light mode ── */
+/* ── CHAT INPUT & BOTTOM BAR ── */
 [data-testid="stBottom"],
 [data-testid="stBottomBlockContainer"] {
   background-color: #f0f2f6 !important;
   border-top: 1px solid #e0e0e0 !important;
 }
-/* Kotak input chat */
 [data-testid="stChatInput"],
 [data-testid="stChatInput"] > div,
 [data-testid="stChatInput"] > div > div {
@@ -172,16 +152,8 @@ li[role="option"]:hover {
   color: #31333f !important;
   caret-color: #31333f !important;
 }
-[data-testid="stChatInput"] textarea::placeholder {
-  color: #9ea3b0 !important;
-}
+[data-testid="stChatInput"] textarea::placeholder { color: #9ea3b0 !important; }
 [data-testid="stChatInput"] * { color: #31333f !important; }
-/* Tombol kirim chat */
-[data-testid="stChatInputSubmitButton"],
-[data-testid="stChatInputSubmitButton"] button {
-  background-color: #4f8bf9 !important;
-  border-color: #4f8bf9 !important;
-}
 
 /* Chat messages */
 [data-testid="stChatMessage"] {
@@ -191,6 +163,13 @@ li[role="option"]:hover {
   border: 1px solid #e8eaef !important;
 }
 [data-testid="stChatMessage"] * { color: #31333f !important; }
+
+/* Alert / info box */
+[data-testid="stAlert"][data-baseweb="notification"] {
+  background-color: #e8f4fd !important;
+  color: #1a4a6b !important;
+}
+[data-testid="stAlert"] * { color: inherit !important; }
 
 /* Metric */
 [data-testid="metric-container"] {
@@ -883,7 +862,30 @@ if uploaded_file is not None:
     df_raw = pd.read_csv(uploaded_file)
 
     st.subheader("👀 Preview Data")
-    st.dataframe(df_raw, use_container_width=True)
+    # Render sebagai HTML tabel custom (light mode penuh, tidak pakai iframe)
+    def render_preview_table(df: pd.DataFrame) -> str:
+        cols = list(df.columns)
+        header = "".join(f"<th>{c}</th>" for c in cols)
+        rows = ""
+        for i, (_, row) in enumerate(df.iterrows()):
+            bg = "#ffffff" if i % 2 == 0 else "#f8f9fa"
+            cells = "".join(f"<td>{row[c]}</td>" for c in cols)
+            rows += f'<tr style="background:{bg}">{cells}</tr>'
+        return f"""<style>
+.prev-wrap{{overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0;background:#fff;margin-bottom:8px}}
+.prev-wrap table{{width:100%;border-collapse:collapse;font-size:.83rem;font-family:'Segoe UI',sans-serif}}
+.prev-wrap thead tr{{background:#f7f8fa}}
+.prev-wrap th{{padding:10px 12px;color:#4a5568;font-weight:600;font-size:.78rem;
+  text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap}}
+.prev-wrap td{{padding:9px 12px;color:#2d3748;border-bottom:1px solid #edf2f7}}
+.prev-wrap tr:last-child td{{border-bottom:none}}
+.prev-wrap tr:hover td{{background:#eef2ff!important}}
+</style>
+<div class="prev-wrap"><table>
+<thead><tr><th>#</th>{header}</tr></thead>
+<tbody>{rows}</tbody>
+</table></div>"""
+    st.markdown(render_preview_table(df_raw), unsafe_allow_html=True)
 
     # Deteksi kolom
     mapping = deteksi_kolom(df_raw)

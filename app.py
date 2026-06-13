@@ -413,71 +413,127 @@ def render_kalender(beban_json: str, tahun_awal: int, bulan_awal: int) -> str:
 <html lang="id">
 <head><meta charset="UTF-8">
 <style>
+:root{{
+  --bg-body:transparent;
+  --c-month:#1a1a2e;
+  --c-hdr:#999;
+  --c-legend:#666;
+  --lb-border:rgba(0,0,0,.1);
+  --cell-c0-bg:#f4f5f7;--cell-c0-fg:#aaa;--cell-c0-bd:transparent;
+  --cell-c1-bg:#e8f4fd;--cell-c1-fg:#1a365d;--cell-c1-bd:#b3d9f5;
+  --cell-c2-bg:#fffbeb;--cell-c2-fg:#744210;--cell-c2-bd:#fcd34d;
+  --cell-c3-bg:#fff3e0;--cell-c3-fg:#6d3700;--cell-c3-bd:#fb923c;
+  --cell-c4-bg:#ffe4e6;--cell-c4-fg:#7f1d1d;--cell-c4-bd:#f87171;
+  --cell-c5-bg:#dc2626;--cell-c5-fg:#fff;--cell-c5-bd:#991b1b;
+  --today-ring:#1976d2;
+  --badge-bg:rgba(0,0,0,.12);
+  --chip-bg:rgba(0,0,0,.07);
+  --chip-pt:#e53935;--chip-ps:#ff9800;--chip-pr:#4caf50;
+  --overlay-bg:rgba(0,0,0,.5);
+  --modal-bg:#fff;--modal-bd:#e2e8f0;
+  --m-date:#1a1a2e;--m-sub:#718096;
+  --tcard-bg:#f8f9fa;--tcard-bd:#e2e8f0;
+  --tc-name:#1a1a2e;--tc-row:#555;
+  --pt-bg:#fde8e8;--pt-fg:#c62828;
+  --ps-bg:#fff3e0;--ps-fg:#e65100;
+  --pr-bg:#e8f5e9;--pr-fg:#2e7d32;
+  --sdone-bg:#e8f5e9;--sdone-fg:#2e7d32;
+  --stodo-bg:#fff3e0;--stodo-fg:#e65100;
+  --btn-close-bg:#f0f2f5;--btn-close-fg:#333;--btn-close-hover:#e0e2e5;
+  --leg-today-bg:#fff;
+}}
+@media(prefers-color-scheme:dark){{
+  :root{{
+    --c-month:#e8eaf0;
+    --c-hdr:#8899aa;
+    --c-legend:#8899aa;
+    --lb-border:rgba(255,255,255,.1);
+    --cell-c0-bg:#1e2330;--cell-c0-fg:#4a5568;--cell-c0-bd:#2d3348;
+    --cell-c1-bg:#0d2137;--cell-c1-fg:#90cdf4;--cell-c1-bd:#1a4a6e;
+    --cell-c2-bg:#2a2000;--cell-c2-fg:#f6e05e;--cell-c2-bd:#6b5300;
+    --cell-c3-bg:#2d1800;--cell-c3-fg:#fbd38d;--cell-c3-bd:#7c3a00;
+    --cell-c4-bg:#2d1200;--cell-c4-fg:#fc8181;--cell-c4-bd:#922b00;
+    --cell-c5-bg:#7b0d0d;--cell-c5-fg:#fff5f5;--cell-c5-bd:#c53030;
+    --today-ring:#63b3ed;
+    --badge-bg:rgba(255,255,255,.15);
+    --chip-bg:rgba(255,255,255,.08);
+    --chip-pt:#fc8181;--chip-ps:#f6ad55;--chip-pr:#68d391;
+    --overlay-bg:rgba(0,0,0,.75);
+    --modal-bg:#1a2035;--modal-bd:#2d3a52;
+    --m-date:#e2e8f0;--m-sub:#718096;
+    --tcard-bg:#242d42;--tcard-bd:#2d3a52;
+    --tc-name:#e2e8f0;--tc-row:#a0aec0;
+    --pt-bg:#3d1515;--pt-fg:#fc8181;
+    --ps-bg:#3d2a00;--ps-fg:#f6ad55;
+    --pr-bg:#0f2d1a;--pr-fg:#68d391;
+    --sdone-bg:#0f2d1a;--sdone-fg:#68d391;
+    --stodo-bg:#3d2a00;--stodo-fg:#f6ad55;
+    --btn-close-bg:#2d3748;--btn-close-fg:#e2e8f0;--btn-close-hover:#3d4a60;
+    --leg-today-bg:#1a2035;
+  }}
+}}
 *{{box-sizing:border-box;margin:0;padding:0}}
-body{{font-family:'Segoe UI',sans-serif;background:transparent;padding:6px 10px}}
+body{{font-family:'Segoe UI',sans-serif;background:var(--bg-body);padding:6px 10px}}
 .cal-nav{{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}}
 .cal-nav button{{background:#4a90d9;color:#fff;border:none;border-radius:8px;padding:8px 20px;
   font-size:.95rem;cursor:pointer;transition:background .2s;font-weight:600}}
 .cal-nav button:hover{{background:#2c6fad}}
-.month-lbl{{font-size:1.35rem;font-weight:800;color:#e8eaf0}}
+.month-lbl{{font-size:1.35rem;font-weight:800;color:var(--c-month)}}
 .cal-grid{{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}}
-.hdr{{text-align:center;font-size:.68rem;font-weight:700;color:#8899aa;padding:5px 0;
+.hdr{{text-align:center;font-size:.68rem;font-weight:700;color:var(--c-hdr);padding:5px 0;
   letter-spacing:.05em;text-transform:uppercase}}
 .cell{{border-radius:10px;min-height:78px;padding:7px 6px;border:2px solid transparent;
   transition:transform .15s,box-shadow .15s;font-size:.7rem}}
 .cell.click{{cursor:pointer}}
-.cell.click:hover{{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.45);
+.cell.click:hover{{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.3);
   border-color:#4a90d9!important;z-index:2}}
 .cell.empty{{background:transparent}}
-.cell.c0{{background:#1e2330;color:#4a5568;border-color:#2d3348}}
-.cell.c1{{background:#0d2137;border-color:#1a4a6e;color:#90cdf4}}
-.cell.c2{{background:#2a2000;border-color:#6b5300;color:#f6e05e}}
-.cell.c3{{background:#2d1800;border-color:#7c3a00;color:#fbd38d}}
-.cell.c4{{background:#2d1200;border-color:#922b00;color:#fc8181}}
-.cell.c5{{background:#7b0d0d;border-color:#c53030;color:#fff5f5}}
-.cell.today{{outline:3px solid #63b3ed;outline-offset:-2px}}
-.cell.today .dn{{color:#63b3ed;font-weight:900}}
+.cell.c0{{background:var(--cell-c0-bg);color:var(--cell-c0-fg);border-color:var(--cell-c0-bd)}}
+.cell.c1{{background:var(--cell-c1-bg);color:var(--cell-c1-fg);border-color:var(--cell-c1-bd)}}
+.cell.c2{{background:var(--cell-c2-bg);color:var(--cell-c2-fg);border-color:var(--cell-c2-bd)}}
+.cell.c3{{background:var(--cell-c3-bg);color:var(--cell-c3-fg);border-color:var(--cell-c3-bd)}}
+.cell.c4{{background:var(--cell-c4-bg);color:var(--cell-c4-fg);border-color:var(--cell-c4-bd)}}
+.cell.c5{{background:var(--cell-c5-bg);color:var(--cell-c5-fg);border-color:var(--cell-c5-bd)}}
+.cell.today{{outline:3px solid var(--today-ring);outline-offset:-2px}}
+.cell.today .dn{{color:var(--today-ring);font-weight:900}}
 .dn{{font-size:.9rem;font-weight:700;margin-bottom:4px;display:flex;
   justify-content:space-between;align-items:center}}
-.badge{{background:rgba(255,255,255,.15);border-radius:20px;padding:1px 7px;
-  font-size:.6rem;font-weight:800}}
-.c5 .badge{{background:rgba(255,255,255,.25)}}
-.chip{{display:block;background:rgba(255,255,255,.08);border-radius:5px;padding:2px 5px;
+.badge{{background:var(--badge-bg);border-radius:20px;padding:1px 7px;font-size:.6rem;font-weight:800}}
+.chip{{display:block;background:var(--chip-bg);border-radius:5px;padding:2px 5px;
   margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.62rem}}
-.c5 .chip{{background:rgba(255,255,255,.15);color:#fff}}
-.chip.pt{{border-left:3px solid #fc8181}}
-.chip.ps{{border-left:3px solid #f6ad55}}
-.chip.pr{{border-left:3px solid #68d391}}
+.chip.pt{{border-left:3px solid var(--chip-pt)}}
+.chip.ps{{border-left:3px solid var(--chip-ps)}}
+.chip.pr{{border-left:3px solid var(--chip-pr)}}
 .legend{{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
-  margin-top:14px;font-size:.7rem;color:#8899aa}}
+  margin-top:14px;font-size:.7rem;color:var(--c-legend)}}
 .leg{{display:flex;align-items:center;gap:5px}}
-.lb{{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.1);flex-shrink:0}}
+.lb{{width:14px;height:14px;border-radius:4px;border:1px solid var(--lb-border);flex-shrink:0}}
 /* Modal */
-.overlay{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+.overlay{{display:none;position:fixed;inset:0;background:var(--overlay-bg);
   z-index:1000;align-items:center;justify-content:center;padding:16px}}
 .overlay.on{{display:flex}}
-.modal{{background:#1a2035;border:1px solid #2d3a52;border-radius:18px;padding:26px;max-width:500px;width:100%;
-  max-height:82vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);
-  animation:up .22s ease}}
+.modal{{background:var(--modal-bg);border:1px solid var(--modal-bd);border-radius:18px;padding:26px;
+  max-width:500px;width:100%;max-height:82vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.4);animation:up .22s ease}}
 @keyframes up{{from{{transform:translateY(24px);opacity:0}}to{{transform:translateY(0);opacity:1}}}}
-.m-date{{font-size:1.05rem;font-weight:800;color:#e2e8f0;margin-bottom:3px}}
-.m-sub{{font-size:.78rem;color:#718096;margin-bottom:16px}}
-.tcard{{background:#242d42;border:1px solid #2d3a52;border-radius:11px;padding:13px 14px;margin-bottom:10px}}
-.tc-name{{font-weight:700;font-size:.92rem;color:#e2e8f0;margin-bottom:6px}}
-.tc-row{{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:#a0aec0}}
+.m-date{{font-size:1.05rem;font-weight:800;color:var(--m-date);margin-bottom:3px}}
+.m-sub{{font-size:.78rem;color:var(--m-sub);margin-bottom:16px}}
+.tcard{{background:var(--tcard-bg);border:1px solid var(--tcard-bd);border-radius:11px;padding:13px 14px;margin-bottom:10px}}
+.tc-name{{font-weight:700;font-size:.92rem;color:var(--tc-name);margin-bottom:6px}}
+.tc-row{{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:var(--tc-row)}}
 .tc-row span{{display:flex;align-items:center;gap:4px}}
-.pbadge{{display:inline-block;padding:2px 10px;border-radius:20px;
-  font-size:.66rem;font-weight:700;margin-top:7px}}
-.pt{{background:#3d1515;color:#fc8181}}
-.ps{{background:#3d2a00;color:#f6ad55}}
-.pr{{background:#0f2d1a;color:#68d391}}
-.sdone{{background:#0f2d1a;color:#68d391;font-size:.66rem;font-weight:700;
+.pbadge{{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.66rem;font-weight:700;margin-top:7px}}
+.pt{{background:var(--pt-bg);color:var(--pt-fg)}}
+.ps{{background:var(--ps-bg);color:var(--ps-fg)}}
+.pr{{background:var(--pr-bg);color:var(--pr-fg)}}
+.sdone{{background:var(--sdone-bg);color:var(--sdone-fg);font-size:.66rem;font-weight:700;
   padding:2px 10px;border-radius:20px;display:inline-block;margin-top:7px;margin-left:6px}}
-.stodo{{background:#3d2a00;color:#f6ad55;font-size:.66rem;font-weight:700;
+.stodo{{background:var(--stodo-bg);color:var(--stodo-fg);font-size:.66rem;font-weight:700;
   padding:2px 10px;border-radius:20px;display:inline-block;margin-top:7px;margin-left:6px}}
-.btn-close{{width:100%;margin-top:16px;padding:11px;background:#2d3748;border:1px solid #4a5568;
-  border-radius:9px;font-size:.88rem;cursor:pointer;color:#e2e8f0;font-weight:600;transition:background .2s}}
-.btn-close:hover{{background:#3d4a60}}
+.btn-close{{width:100%;margin-top:16px;padding:11px;background:var(--btn-close-bg);
+  border:1px solid var(--modal-bd);border-radius:9px;font-size:.88rem;cursor:pointer;
+  color:var(--btn-close-fg);font-weight:600;transition:background .2s}}
+.btn-close:hover{{background:var(--btn-close-hover)}}
 </style></head>
 <body>
 <div class="cal-nav">
@@ -487,13 +543,13 @@ body{{font-family:'Segoe UI',sans-serif;background:transparent;padding:6px 10px}
 </div>
 <div class="cal-grid" id="grid"></div>
 <div class="legend">
-  <div class="leg"><div class="lb" style="background:#1e2330;border-color:#2d3348"></div>Bebas</div>
-  <div class="leg"><div class="lb" style="background:#0d2137;border-color:#1a4a6e"></div>1</div>
-  <div class="leg"><div class="lb" style="background:#2a2000;border-color:#6b5300"></div>2</div>
-  <div class="leg"><div class="lb" style="background:#2d1800;border-color:#7c3a00"></div>3</div>
-  <div class="leg"><div class="lb" style="background:#2d1200;border-color:#922b00"></div>4</div>
-  <div class="leg"><div class="lb" style="background:#7b0d0d;border-color:#c53030"></div>5+ 🚨</div>
-  <div class="leg"><div class="lb" style="outline:3px solid #63b3ed;background:#1a2035"></div>Hari ini</div>
+  <div class="leg"><div class="lb" style="background:var(--cell-c0-bg);border-color:var(--cell-c0-bd)"></div>Bebas</div>
+  <div class="leg"><div class="lb" style="background:var(--cell-c1-bg);border-color:var(--cell-c1-bd)"></div>1</div>
+  <div class="leg"><div class="lb" style="background:var(--cell-c2-bg);border-color:var(--cell-c2-bd)"></div>2</div>
+  <div class="leg"><div class="lb" style="background:var(--cell-c3-bg);border-color:var(--cell-c3-bd)"></div>3</div>
+  <div class="leg"><div class="lb" style="background:var(--cell-c4-bg);border-color:var(--cell-c4-bd)"></div>4</div>
+  <div class="leg"><div class="lb" style="background:var(--cell-c5-bg)"></div>5+ 🚨</div>
+  <div class="leg"><div class="lb" style="outline:3px solid var(--today-ring);background:var(--leg-today-bg)"></div>Hari ini</div>
 </div>
 <div class="overlay" id="ov" onclick="closeM(event)">
   <div class="modal">
@@ -743,43 +799,65 @@ if uploaded_file is not None:
         st.caption("Urutan: deadline terdekat + prioritas tertinggi → kerjakan dari baris paling atas")
 
         if not df_prio.empty:
-            def render_tabel_html(df: pd.DataFrame, warna_fn) -> str:
-                cols = list(df.columns)
-                header = "".join(f'<th>{c}</th>' for c in cols)
-                rows_html = ""
-                for idx, row in df.iterrows():
-                    bg, fg = warna_fn(row)
-                    style = f"background:{bg};color:{fg};" if bg else ""
-                    cells = "".join(f'<td>{row[c]}</td>' for c in cols)
-                    rows_html += f'<tr style="{style}"><td style="color:#718096;width:36px">{idx}</td>{cells}</tr>'
-                return f"""<div style="overflow-x:auto;border-radius:10px;border:1px solid #2d3a52;">
-<table style="width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif;">
-<thead><tr style="background:#1a2035;color:#a0aec0;text-align:left;">
-<th style="padding:10px 8px;width:36px">#</th>
-{"".join(f'<th style="padding:10px 8px;white-space:nowrap">{c}</th>' for c in cols)}
-</tr></thead>
-<tbody>{"".join(f'<tr style="border-top:1px solid #2d3a52;{( lambda b,f: f"background:{b};color:{f};" if b else "" )(*warna_fn(row))}">' + f'<td style="padding:9px 8px;color:#718096">{idx}</td>' + "".join(f'<td style="padding:9px 8px">{row[c]}</td>' for c in cols) + "</tr>" for idx, row in df.iterrows())}
-</tbody></table></div>"""
+            TABEL_STYLE = """<style>
+:root{
+  --t-border:#e2e8f0;--t-head-bg:#f7f8fa;--t-head-fg:#4a5568;
+  --t-row-fg:#2d3748;--t-num-fg:#a0aec0;--t-row-hover:rgba(0,0,0,.03);
+  --t-kritis-bg:#fff5f5;--t-kritis-fg:#c53030;
+  --t-mendesak-bg:#fffaf0;--t-mendesak-fg:#c05621;
+  --t-perhatikan-bg:#fffff0;--t-perhatikan-fg:#975a16;
+  --t-aman-bg:#f0fff4;--t-aman-fg:#276749;
+  --t-urgent-bg:#fff5f5;--t-urgent-fg:#c53030;
+  --t-warning-bg:#fffaf0;--t-warning-fg:#c05621;
+  --t-normal-fg:#4a5568;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --t-border:#2d3a52;--t-head-bg:#1a2035;--t-head-fg:#a0aec0;
+    --t-row-fg:#c9d1d9;--t-num-fg:#4a5568;--t-row-hover:rgba(255,255,255,.03);
+    --t-kritis-bg:#3d1515;--t-kritis-fg:#fc8181;
+    --t-mendesak-bg:#3d2a00;--t-mendesak-fg:#f6ad55;
+    --t-perhatikan-bg:#2a2d00;--t-perhatikan-fg:#f6e05e;
+    --t-aman-bg:#0f2d1a;--t-aman-fg:#68d391;
+    --t-urgent-bg:#3d1515;--t-urgent-fg:#fc8181;
+    --t-warning-bg:#3d2a00;--t-warning-fg:#f6ad55;
+    --t-normal-fg:#8899aa;
+  }
+}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--t-border)}
+table{width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif}
+thead tr{background:var(--t-head-bg);color:var(--t-head-fg);text-align:left}
+th{padding:10px 10px;white-space:nowrap;font-weight:600;font-size:.8rem}
+td{padding:9px 10px;color:var(--t-row-fg)}
+tr{border-top:1px solid var(--t-border)}
+tr:hover td{background:var(--t-row-hover)}
+.num{color:var(--t-num-fg);width:36px}
+.kritis{background:var(--t-kritis-bg)}.kritis td{color:var(--t-kritis-fg)}
+.mendesak{background:var(--t-mendesak-bg)}.mendesak td{color:var(--t-mendesak-fg)}
+.perhatikan{background:var(--t-perhatikan-bg)}.perhatikan td{color:var(--t-perhatikan-fg)}
+.aman{background:var(--t-aman-bg)}.aman td{color:var(--t-aman-fg)}
+.urgent{background:var(--t-urgent-bg)}.urgent td{color:var(--t-urgent-fg)}
+.warning{background:var(--t-warning-bg)}.warning td{color:var(--t-warning-fg)}
+.normal td{color:var(--t-normal-fg)}
+</style>"""
 
-            def warna_prio(row):
+            def kelas_prio(row):
                 u = row.get("Urgensi","")
-                if "Terlambat" in u or "Kritis" in u: return "#3d1515","#fc8181"
-                elif "Mendesak" in u:                 return "#3d2a00","#f6ad55"
-                elif "Perhatikan" in u:               return "#2a2d00","#f6e05e"
-                else:                                 return "#0f2d1a","#68d391"
+                if "Terlambat" in u or "Kritis" in u: return "kritis"
+                elif "Mendesak" in u:                 return "mendesak"
+                elif "Perhatikan" in u:               return "perhatikan"
+                else:                                 return "aman"
 
             cols_p = list(df_prio.columns)
-            header_p = "".join(f'<th style="padding:10px 8px;white-space:nowrap">{c}</th>' for c in cols_p)
+            header_p = "".join(f'<th>{c}</th>' for c in cols_p)
             rows_p = ""
             for idx, row in df_prio.iterrows():
-                bg, fg = warna_prio(row)
-                cells = "".join(f'<td style="padding:9px 8px">{row[c]}</td>' for c in cols_p)
-                rows_p += f'<tr style="border-top:1px solid #2d3a52;background:{bg};color:{fg};"><td style="padding:9px 8px;color:#718096;width:36px">{idx}</td>{cells}</tr>'
-            html_prio = f"""<div style="overflow-x:auto;border-radius:10px;border:1px solid #2d3a52;">
-<table style="width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif;">
-<thead><tr style="background:#1a2035;color:#a0aec0;text-align:left;">
-<th style="padding:10px 8px;width:36px">#</th>{header_p}
-</tr></thead><tbody>{rows_p}</tbody></table></div>"""
+                kls = kelas_prio(row)
+                cells = "".join(f'<td>{row[c]}</td>' for c in cols_p)
+                rows_p += f'<tr class="{kls}"><td class="num">{idx}</td>{cells}</tr>'
+            html_prio = f"""{TABEL_STYLE}<div class="tbl-wrap"><table>
+<thead><tr><th>#</th>{header_p}</tr></thead>
+<tbody>{rows_p}</tbody></table></div>"""
             st.markdown(html_prio, unsafe_allow_html=True)
         else:
             st.success("🎉 Semua tugas sudah selesai!")
@@ -791,25 +869,22 @@ if uploaded_file is not None:
         st.caption("Jadwal otomatis dari algoritma Python — 1 tugas per hari, diurutkan dari yang paling mendesak")
 
         if not df_jadwal.empty:
-            def warna_jadwal(row):
+            def kelas_jadwal(row):
                 c = row.get("Catatan","")
-                if "Deadline HARI INI" in c or "terlewat" in c: return "#3d1515","#fc8181"
-                elif "🔴" in c:                                   return "#3d2a00","#f6ad55"
-                else:                                             return "","#c9d1d9"
+                if "Deadline HARI INI" in c or "terlewat" in c: return "urgent"
+                elif "🔴" in c:                                   return "warning"
+                else:                                             return "normal"
 
             cols_j = list(df_jadwal.columns)
-            header_j = "".join(f'<th style="padding:10px 8px;white-space:nowrap">{c}</th>' for c in cols_j)
+            header_j = "".join(f'<th>{c}</th>' for c in cols_j)
             rows_j = ""
             for _, row in df_jadwal.iterrows():
-                bg, fg = warna_jadwal(row)
-                row_style = f"background:{bg};" if bg else ""
-                cells = "".join(f'<td style="padding:9px 8px;color:{fg}">{row[c]}</td>' for c in cols_j)
-                rows_j += f'<tr style="border-top:1px solid #2d3a52;{row_style}">{cells}</tr>'
-            html_jadwal = f"""<div style="overflow-x:auto;border-radius:10px;border:1px solid #2d3a52;">
-<table style="width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif;">
-<thead><tr style="background:#1a2035;color:#a0aec0;text-align:left;">
-{header_j}
-</tr></thead><tbody>{rows_j}</tbody></table></div>"""
+                kls = kelas_jadwal(row)
+                cells = "".join(f'<td>{row[c]}</td>' for c in cols_j)
+                rows_j += f'<tr class="{kls}">{cells}</tr>'
+            html_jadwal = f"""{TABEL_STYLE}<div class="tbl-wrap"><table>
+<thead><tr>{header_j}</tr></thead>
+<tbody>{rows_j}</tbody></table></div>"""
             st.markdown(html_jadwal, unsafe_allow_html=True)
         else:
             st.info("Tidak ada tugas aktif yang perlu dijadwalkan.")

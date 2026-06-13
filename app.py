@@ -14,168 +14,143 @@ except ImportError:
 # KONFIGURASI
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 st.markdown("""<style>
-/* ── FORCE LIGHT MODE: semua elemen Streamlit ── */
+/* ── FORCE LIGHT MODE ── */
 html, body { color-scheme: light !important; background:#fff !important; }
 
-/* App wrapper */
+/* App & main containers */
 [data-testid="stApp"],
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
 [data-testid="stMainBlockContainer"],
-.main, .block-container, section.main {
+.main, .block-container {
   background-color: #ffffff !important;
   color: #31333f !important;
 }
 
 /* Header / top bar */
-[data-testid="stHeader"],
-[data-testid="stToolbar"],
-header[data-testid="stHeader"] {
+[data-testid="stHeader"] {
   background-color: #ffffff !important;
-  border-bottom: 1px solid #e0e0e0 !important;
+  border-bottom: 1px solid #e6e9ef !important;
 }
-[data-testid="stHeader"] * { color: #31333f !important; }
-[data-testid="stDecoration"] { background: #ffffff !important; }
 
 /* Sidebar */
 [data-testid="stSidebar"],
-[data-testid="stSidebarContent"],
-[data-testid="stSidebarCollapsedControl"],
-section[data-testid="stSidebar"] { background-color: #f0f2f6 !important; }
-[data-testid="stSidebar"] *,
-[data-testid="stSidebarContent"] * { color: #31333f !important; }
+[data-testid="stSidebarContent"] {
+  background-color: #f0f2f6 !important;
+}
+[data-testid="stSidebar"] * { color: #31333f !important; }
 [data-testid="stSidebar"] code,
 [data-testid="stSidebar"] pre {
   background-color: #e0e3eb !important;
   color: #31333f !important;
 }
 
-/* Semua teks */
-p, h1, h2, h3, h4, h5, h6, li, span, label, div,
+/* Teks umum */
+p, h1, h2, h3, h4, h5, h6, li,
 .stMarkdown, [data-testid="stMarkdownContainer"] {
   color: #31333f !important;
 }
 
-/* Dataframe / tabel preview */
-[data-testid="stDataFrame"],
-[data-testid="stDataFrameResizable"],
-.stDataFrame, .dvn-scroller,
-[class*="dataframe"] { background-color: #ffffff !important; }
-[data-testid="stDataFrame"] iframe { filter: invert(0) !important; }
-
-/* Override iframe dataframe via CSS injection ke dalam frame */
-[data-testid="stDataFrame"] > div { background: #ffffff !important; }
-
 /* File uploader */
-[data-testid="stFileUploader"],
-[data-testid="stFileUploaderDropzone"],
-[data-baseweb="file-uploader"],
-[data-testid="stFileUploadDropzone"] {
+[data-testid="stFileUploader"] {
   background-color: #f8f9fa !important;
   border-color: #cccccc !important;
-  color: #31333f !important;
 }
-[data-testid="stFileUploader"] *,
-[data-testid="stFileUploaderDropzone"] * { color: #31333f !important; }
-[data-testid="stFileUploader"] small { color: #666 !important; }
+[data-testid="stFileUploader"] * { color: #31333f !important; }
+[data-testid="stFileUploaderDeleteBtn"] { color: #31333f !important; }
 
-/* File yang sudah diupload */
-[data-testid="stFileUploaderFile"],
-[data-testid="baseButton-minimal"] {
+/* Input & textarea */
+input, textarea {
   background-color: #ffffff !important;
   color: #31333f !important;
-  border: 1px solid #ddd !important;
 }
-
-/* Input, selectbox, textarea */
-input, textarea, select,
-[data-baseweb="input"] input,
-[data-baseweb="textarea"] textarea,
-.stTextInput input, .stTextArea textarea {
-  background-color: #ffffff !important;
-  color: #31333f !important;
-  border-color: #cccccc !important;
-}
-[data-baseweb="input"],
-[data-baseweb="textarea"],
-[data-baseweb="select"],
+[data-baseweb="input"], [data-baseweb="textarea"],
 [data-baseweb="base-input"] {
   background-color: #ffffff !important;
   color: #31333f !important;
 }
 
-/* Selectbox dropdown */
-[data-baseweb="popover"],
+/* Selectbox */
+[data-baseweb="select"] > div {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+  border-color: #cccccc !important;
+}
+
+/* Semua popup / dropdown / menu (termasuk ⋮ dan selectbox) */
+[data-baseweb="popover"] > div,
 [data-baseweb="menu"],
+[data-testid="stMainMenuPopover"],
+[data-testid="stMainMenu"],
 [role="listbox"],
-[role="option"] {
+ul[role="listbox"],
+li[role="option"],
+[data-baseweb="list"] {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12) !important;
+}
+[role="option"], li[role="option"] {
+  color: #31333f !important;
+}
+[role="option"]:hover,
+li[role="option"]:hover {
+  background-color: #f0f2f6 !important;
+}
+
+/* ⋮ menu items */
+[data-testid="stMainMenuPopover"] ul,
+[data-testid="stMainMenuPopover"] li,
+[data-testid="stMainMenuPopover"] button,
+[data-testid="stMainMenuPopover"] span,
+[data-testid="stMainMenuPopover"] a {
   background-color: #ffffff !important;
   color: #31333f !important;
 }
-[role="option"]:hover { background-color: #f0f2f6 !important; }
+[data-testid="stMainMenuPopover"] li:hover,
+[data-testid="stMainMenuPopover"] button:hover {
+  background-color: #f0f2f6 !important;
+}
 
-/* Chat input area & footer */
-[data-testid="stChatInput"],
-[data-testid="stChatInputContainer"],
+/* Chat input & bottom bar */
 [data-testid="stBottom"],
-[data-testid="stBottomBlockContainer"],
-.stChatInput, footer {
+[data-testid="stBottomBlockContainer"] {
   background-color: #f0f2f6 !important;
   border-top: 1px solid #e0e0e0 !important;
 }
-[data-testid="stChatInput"] *,
-[data-testid="stBottom"] * { color: #31333f !important; }
 [data-testid="stChatInput"] textarea {
   background-color: #ffffff !important;
   color: #31333f !important;
 }
+[data-testid="stChatInput"] * { color: #31333f !important; }
 
 /* Chat messages */
-[data-testid="stChatMessage"],
-[data-testid="stChatMessageContent"] {
-  background-color: #f0f2f6 !important;
-  color: #31333f !important;
-}
+[data-testid="stChatMessage"] { color: #31333f !important; }
 
 /* Metric */
-[data-testid="metric-container"],
-[data-testid="stMetric"] {
+[data-testid="metric-container"] {
   background-color: #f8f9fa !important;
   border: 1px solid #e0e0e0 !important;
   border-radius: 8px !important;
 }
 [data-testid="stMetric"] * { color: #31333f !important; }
 
-/* Alert / info / success / warning */
-[data-testid="stAlert"],
-[data-testid="stInfo"],
-[data-testid="stSuccess"],
-[data-testid="stWarning"],
-[data-testid="stError"] { color: #31333f !important; }
-
 /* Expander */
-[data-testid="stExpander"],
-[data-testid="stExpanderDetails"] {
+[data-testid="stExpander"] {
   background-color: #f8f9fa !important;
   border: 1px solid #e0e0e0 !important;
 }
-[data-testid="stExpander"] * { color: #31333f !important; }
 
-/* Divider */
+/* Divider & caption */
 hr { border-color: #e0e0e0 !important; }
-
-/* Caption / small text */
-[data-testid="stCaptionContainer"],
-.stCaption, small { color: #666666 !important; }
-
-/* Spinner */
-[data-testid="stSpinner"] * { color: #31333f !important; }
+[data-testid="stCaptionContainer"] { color: #666 !important; }
 
 /* Button secondary */
 [data-testid="baseButton-secondary"] {
   background-color: #f0f2f6 !important;
   color: #31333f !important;
-  border: 1px solid #cccccc !important;
+  border-color: #cccccc !important;
 }
 
 /* Scrollbar */
@@ -845,23 +820,6 @@ if uploaded_file is not None:
 
     st.subheader("👀 Preview Data")
     st.dataframe(df_raw, use_container_width=True)
-    st.markdown("""<script>
-(function(){
-  function fixIframes(){
-    document.querySelectorAll('iframe').forEach(function(f){
-      try{
-        var d=f.contentDocument||f.contentWindow.document;
-        if(!d.getElementById('_lm_fix')){
-          var s=d.createElement('style');s.id='_lm_fix';
-          s.textContent='html,body,*{background:#fff!important;color:#31333f!important;border-color:#ddd!important;}thead tr{background:#f0f2f6!important;}';
-          d.head&&d.head.appendChild(s);
-        }
-      }catch(e){}
-    });
-  }
-  fixIframes();setInterval(fixIframes,800);
-})();
-</script>""", unsafe_allow_html=True)
 
     # Deteksi kolom
     mapping = deteksi_kolom(df_raw)

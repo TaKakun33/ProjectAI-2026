@@ -51,7 +51,7 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
 }
 
-/* ── UPLOAD DATA — file uploader zona & pill ── */
+/* ── UPLOAD DATA — file uploader zona ── */
 [data-testid="stFileUploader"] {
   background-color: #ffffff !important;
 }
@@ -65,73 +65,11 @@ p, h1, h2, h3, h4, h5, h6, li,
   color: #31333f !important;
   fill: #31333f !important;
 }
-/* ── FILE PILL ── */
-[data-testid="stFileUploaderFile"] {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
-  border: 1px solid #d0d3db !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-  color-scheme: light !important;
-}
-[data-testid="stFileUploaderFile"] span,
-[data-testid="stFileUploaderFile"] p,
-[data-testid="stFileUploaderFileName"],
-[data-testid="stFileUploaderFileSize"] {
-  color: #31333f !important;
-  background-color: transparent !important;
-  background: transparent !important;
-}
-[data-testid="stFileUploaderFile"] svg,
-[data-testid="stFileUploaderFile"] svg path,
-[data-testid="stFileUploaderFile"] svg rect,
-[data-testid="stFileUploaderFile"] svg circle {
-  background: transparent !important;
-  background-color: transparent !important;
-}
-
-/* ── TOMBOL X HAPUS FILE ── */
-[data-testid="stFileUploaderDeleteBtn"] {
-  background-color: #e2e6ee !important;
-  background: #e2e6ee !important;
-  border-radius: 50% !important;
-  border: 1px solid #c0c5d0 !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  padding: 0 !important;
-}
-[data-testid="stFileUploaderDeleteBtn"]:hover {
-  background-color: #f87171 !important;
-  background: #f87171 !important;
-  border-color: #ef4444 !important;
-}
-[data-testid="stFileUploaderDeleteBtn"] svg,
-[data-testid="stFileUploaderDeleteBtn"] svg path,
-[data-testid="stFileUploaderDeleteBtn"] svg rect,
-[data-testid="stFileUploaderDeleteBtn"] svg circle {
-  fill: #31333f !important;
-  background: transparent !important;
-  background-color: transparent !important;
-}
-[data-testid="stFileUploaderDeleteBtn"]:hover svg path {
-  fill: #ffffff !important;
-}
-
-/* Icon di dropzone */
 [data-testid="stFileUploaderDropzone"] svg,
 [data-testid="stFileUploaderDropzone"] svg path {
   fill: #4a5568 !important;
   color: #4a5568 !important;
 }
-/* Semua elemen dalam zona upload */
-[data-testid="stFileUploader"] * { color: #31333f !important; }
 
 /* Input & textarea */
 input, textarea {
@@ -960,68 +898,6 @@ st.caption(
     "Kolom lain (prioritas, estimasi waktu, matkul, status) opsional."
 )
 uploaded_file = st.file_uploader("Pilih file .csv", type=["csv"])
-
-components.html("""<script>
-(function(){
-  function fixFilePill(){
-    try {
-      var doc = window.parent.document;
-      doc.querySelectorAll('[data-testid="stFileUploaderFile"]').forEach(function(pill){
-        pill.style.setProperty('background-color','#ffffff','important');
-        pill.style.setProperty('background','#ffffff','important');
-        pill.style.setProperty('border','1px solid #d0d3db','important');
-        pill.style.setProperty('border-radius','8px','important');
-        pill.style.setProperty('box-shadow','none','important');
-        pill.style.setProperty('color-scheme','light','important');
-        pill.querySelectorAll('div,span,section,article').forEach(function(el){
-          el.style.setProperty('background-color','#ffffff','important');
-          el.style.setProperty('background','#ffffff','important');
-          el.style.setProperty('color-scheme','light','important');
-        });
-        pill.querySelectorAll('span,p,[data-testid="stFileUploaderFileName"],[data-testid="stFileUploaderFileSize"]').forEach(function(el){
-          el.style.setProperty('color','#31333f','important');
-        });
-        pill.querySelectorAll('svg,path,rect,circle,polyline,line').forEach(function(el){
-          el.style.setProperty('background','transparent','important');
-          el.style.setProperty('background-color','transparent','important');
-        });
-      });
-      doc.querySelectorAll('[data-testid="stFileUploaderDeleteBtn"]').forEach(function(btn){
-        btn.style.setProperty('background-color','#e2e6ee','important');
-        btn.style.setProperty('background','#e2e6ee','important');
-        btn.style.setProperty('border-radius','50%','important');
-        btn.style.setProperty('border','1px solid #c0c5d0','important');
-        btn.style.setProperty('opacity','1','important');
-        btn.style.setProperty('visibility','visible','important');
-        btn.style.setProperty('width','24px','important');
-        btn.style.setProperty('height','24px','important');
-        btn.style.setProperty('min-width','24px','important');
-        btn.style.setProperty('padding','0','important');
-        btn.style.setProperty('box-shadow','none','important');
-        btn.querySelectorAll('svg,path,rect,circle').forEach(function(s){
-          s.style.setProperty('fill','#31333f','important');
-          s.style.setProperty('background','transparent','important');
-          s.style.setProperty('background-color','transparent','important');
-        });
-        if(!btn._hooked){
-          btn._hooked = true;
-          btn.addEventListener('mouseenter',function(){
-            btn.style.setProperty('background-color','#f87171','important');
-            btn.querySelectorAll('svg,path').forEach(function(s){ s.style.setProperty('fill','#fff','important'); });
-          });
-          btn.addEventListener('mouseleave',function(){
-            btn.style.setProperty('background-color','#e2e6ee','important');
-            btn.querySelectorAll('svg,path').forEach(function(s){ s.style.setProperty('fill','#31333f','important'); });
-          });
-        }
-      });
-    } catch(e){}
-  }
-  fixFilePill();
-  setInterval(fixFilePill, 200);
-  try { new MutationObserver(fixFilePill).observe(window.parent.document.body,{childList:true,subtree:true}); } catch(e){}
-})();
-</script>""", height=0)
 
 if uploaded_file is not None:
     df_raw = pd.read_csv(uploaded_file)

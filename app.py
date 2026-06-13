@@ -14,44 +14,174 @@ except ImportError:
 # KONFIGURASI
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 st.markdown("""<style>
-html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"],
-[data-testid="stMain"], .main, .block-container {
-  color-scheme: light !important;
+/* ── FORCE LIGHT MODE: semua elemen Streamlit ── */
+html, body { color-scheme: light !important; background:#fff !important; }
+
+/* App wrapper */
+[data-testid="stApp"],
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+.main, .block-container, section.main {
   background-color: #ffffff !important;
   color: #31333f !important;
 }
-[data-testid="stSidebar"], [data-testid="stSidebarContent"] {
+
+/* Header / top bar */
+[data-testid="stHeader"],
+[data-testid="stToolbar"],
+header[data-testid="stHeader"] {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+[data-testid="stHeader"] * { color: #31333f !important; }
+[data-testid="stDecoration"] { background: #ffffff !important; }
+
+/* Sidebar */
+[data-testid="stSidebar"],
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarCollapsedControl"],
+section[data-testid="stSidebar"] { background-color: #f0f2f6 !important; }
+[data-testid="stSidebar"] *,
+[data-testid="stSidebarContent"] * { color: #31333f !important; }
+[data-testid="stSidebar"] code,
+[data-testid="stSidebar"] pre {
+  background-color: #e0e3eb !important;
+  color: #31333f !important;
+}
+
+/* Semua teks */
+p, h1, h2, h3, h4, h5, h6, li, span, label, div,
+.stMarkdown, [data-testid="stMarkdownContainer"] {
+  color: #31333f !important;
+}
+
+/* Dataframe / tabel preview */
+[data-testid="stDataFrame"],
+[data-testid="stDataFrameResizable"],
+.stDataFrame, .dvn-scroller,
+[class*="dataframe"] { background-color: #ffffff !important; }
+[data-testid="stDataFrame"] iframe { filter: invert(0) !important; }
+
+/* Override iframe dataframe via CSS injection ke dalam frame */
+[data-testid="stDataFrame"] > div { background: #ffffff !important; }
+
+/* File uploader */
+[data-testid="stFileUploader"],
+[data-testid="stFileUploaderDropzone"],
+[data-baseweb="file-uploader"],
+[data-testid="stFileUploadDropzone"] {
+  background-color: #f8f9fa !important;
+  border-color: #cccccc !important;
+  color: #31333f !important;
+}
+[data-testid="stFileUploader"] *,
+[data-testid="stFileUploaderDropzone"] * { color: #31333f !important; }
+[data-testid="stFileUploader"] small { color: #666 !important; }
+
+/* File yang sudah diupload */
+[data-testid="stFileUploaderFile"],
+[data-testid="baseButton-minimal"] {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+  border: 1px solid #ddd !important;
+}
+
+/* Input, selectbox, textarea */
+input, textarea, select,
+[data-baseweb="input"] input,
+[data-baseweb="textarea"] textarea,
+.stTextInput input, .stTextArea textarea {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+  border-color: #cccccc !important;
+}
+[data-baseweb="input"],
+[data-baseweb="textarea"],
+[data-baseweb="select"],
+[data-baseweb="base-input"] {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+}
+
+/* Selectbox dropdown */
+[data-baseweb="popover"],
+[data-baseweb="menu"],
+[role="listbox"],
+[role="option"] {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+}
+[role="option"]:hover { background-color: #f0f2f6 !important; }
+
+/* Chat input area & footer */
+[data-testid="stChatInput"],
+[data-testid="stChatInputContainer"],
+[data-testid="stBottom"],
+[data-testid="stBottomBlockContainer"],
+.stChatInput, footer {
+  background-color: #f0f2f6 !important;
+  border-top: 1px solid #e0e0e0 !important;
+}
+[data-testid="stChatInput"] *,
+[data-testid="stBottom"] * { color: #31333f !important; }
+[data-testid="stChatInput"] textarea {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+}
+
+/* Chat messages */
+[data-testid="stChatMessage"],
+[data-testid="stChatMessageContent"] {
   background-color: #f0f2f6 !important;
   color: #31333f !important;
 }
-[data-testid="stSidebar"] * { color: #31333f !important; }
-:root, [data-theme="dark"], [data-theme="light"] {
-  --background-color: #ffffff !important;
-  --secondary-background-color: #f0f2f6 !important;
-  --text-color: #31333f !important;
-  --primary-color: #ff4b4b !important;
-  --font: "Source Sans Pro", sans-serif !important;
+
+/* Metric */
+[data-testid="metric-container"],
+[data-testid="stMetric"] {
+  background-color: #f8f9fa !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
 }
-.stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, li, span, label {
-  color: #31333f !important;
-}
-.stDataFrame, .stTable { background-color: #ffffff !important; }
-.stDataFrame th, .stTable th { background-color: #f0f2f6 !important; color: #31333f !important; }
-.stDataFrame td, .stTable td { color: #31333f !important; }
-[data-testid="metric-container"] { background-color: #f0f2f6 !important; }
 [data-testid="stMetric"] * { color: #31333f !important; }
-div[data-baseweb="input"] { background-color: #ffffff !important; }
-.stTextInput input, .stSelectbox select, textarea {
-  background-color: #ffffff !important;
-  color: #31333f !important;
+
+/* Alert / info / success / warning */
+[data-testid="stAlert"],
+[data-testid="stInfo"],
+[data-testid="stSuccess"],
+[data-testid="stWarning"],
+[data-testid="stError"] { color: #31333f !important; }
+
+/* Expander */
+[data-testid="stExpander"],
+[data-testid="stExpanderDetails"] {
+  background-color: #f8f9fa !important;
+  border: 1px solid #e0e0e0 !important;
 }
-[data-baseweb="select"] { background-color: #ffffff !important; color: #31333f !important; }
-[data-baseweb="popover"] { background-color: #ffffff !important; }
-[data-testid="stChatInput"] { background-color: #f0f2f6 !important; }
-[data-testid="stChatMessageContent"] { background-color: #f0f2f6 !important; }
-.stAlert { background-color: #f0f2f6 !important; }
+[data-testid="stExpander"] * { color: #31333f !important; }
+
+/* Divider */
 hr { border-color: #e0e0e0 !important; }
-[data-testid="stExpander"] { background-color: #f0f2f6 !important; }
+
+/* Caption / small text */
+[data-testid="stCaptionContainer"],
+.stCaption, small { color: #666666 !important; }
+
+/* Spinner */
+[data-testid="stSpinner"] * { color: #31333f !important; }
+
+/* Button secondary */
+[data-testid="baseButton-secondary"] {
+  background-color: #f0f2f6 !important;
+  color: #31333f !important;
+  border: 1px solid #cccccc !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:#f0f2f6; }
+::-webkit-scrollbar-thumb { background:#cccccc; border-radius:3px; }
 </style>""", unsafe_allow_html=True)
 
 # Daftar model yang direkomendasikan (Groq)
@@ -715,6 +845,23 @@ if uploaded_file is not None:
 
     st.subheader("👀 Preview Data")
     st.dataframe(df_raw, use_container_width=True)
+    st.markdown("""<script>
+(function(){
+  function fixIframes(){
+    document.querySelectorAll('iframe').forEach(function(f){
+      try{
+        var d=f.contentDocument||f.contentWindow.document;
+        if(!d.getElementById('_lm_fix')){
+          var s=d.createElement('style');s.id='_lm_fix';
+          s.textContent='html,body,*{background:#fff!important;color:#31333f!important;border-color:#ddd!important;}thead tr{background:#f0f2f6!important;}';
+          d.head&&d.head.appendChild(s);
+        }
+      }catch(e){}
+    });
+  }
+  fixIframes();setInterval(fixIframes,800);
+})();
+</script>""", unsafe_allow_html=True)
 
     # Deteksi kolom
     mapping = deteksi_kolom(df_raw)

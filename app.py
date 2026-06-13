@@ -80,50 +80,41 @@ p, h1, h2, h3, h4, h5, h6, li,
   box-shadow: none !important;
   color-scheme: light !important;
 }
-[data-testid="stFileChip"] > div,
-[data-testid="stFileChip"] > div > div {
+[data-testid="stFileChip"] div {
   background-color: #ffffff !important;
   background: #ffffff !important;
-  color-scheme: light !important;
 }
 [data-testid="stFileChip"] span,
 [data-testid="stFileChip"] p,
 [data-testid="stFileChip"] small {
   color: #31333f !important;
-  background-color: transparent !important;
-}
-[data-testid="stFileChip"] > div > div:first-child {
-  background-color: #f0f2f6 !important;
-  background: #f0f2f6 !important;
-  border-radius: 6px !important;
-}
-[data-testid="stFileChip"] svg,
-[data-testid="stFileChip"] svg path,
-[data-testid="stFileChip"] svg rect {
   background: transparent !important;
   background-color: transparent !important;
+}
+[data-testid="stFileChip"] svg {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+[data-testid="stFileChip"] svg path:not([fill="none"]),
+[data-testid="stFileChip"] svg rect:not([fill="none"]) {
   fill: #4a5568 !important;
 }
 
 /* ── TOMBOL DELETE FILE CHIP ── */
 [data-testid="stFileChipDeleteBtn"] {
-  background-color: #e2e6ee !important;
-  background: #e2e6ee !important;
+  background-color: #e9eaf0 !important;
+  background: #e9eaf0 !important;
   border-radius: 50% !important;
   border: 1px solid #c0c5d0 !important;
   box-shadow: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
 }
 [data-testid="stFileChipDeleteBtn"]:hover {
   background-color: #f87171 !important;
   background: #f87171 !important;
   border-color: #ef4444 !important;
 }
-[data-testid="stFileChipDeleteBtn"] svg,
 [data-testid="stFileChipDeleteBtn"] svg path {
-  fill: #31333f !important;
-  background: transparent !important;
+  fill: #4a5568 !important;
 }
 [data-testid="stFileChipDeleteBtn"]:hover svg path {
   fill: #ffffff !important;
@@ -962,6 +953,7 @@ components.html("""<script>
   function fixChip(){
     try {
       var doc = window.parent.document;
+
       doc.querySelectorAll('[data-testid="stFileChip"]').forEach(function(chip){
         chip.style.setProperty('background-color','#ffffff','important');
         chip.style.setProperty('background','#ffffff','important');
@@ -969,44 +961,70 @@ components.html("""<script>
         chip.style.setProperty('border-radius','8px','important');
         chip.style.setProperty('box-shadow','none','important');
         chip.style.setProperty('color-scheme','light','important');
+
         chip.querySelectorAll('div').forEach(function(el){
-          var bg = window.getComputedStyle(el).backgroundColor;
-          var m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-          if(m && (+m[1]+m[2]+m[3]) < 200){
-            el.style.setProperty('background-color','#f0f2f6','important');
-            el.style.setProperty('background','#f0f2f6','important');
-          } else {
-            el.style.setProperty('background-color','#ffffff','important');
-            el.style.setProperty('background','#ffffff','important');
-          }
+          el.style.setProperty('background-color','#ffffff','important');
+          el.style.setProperty('background','#ffffff','important');
         });
+
         chip.querySelectorAll('span,p,small').forEach(function(el){
           el.style.setProperty('color','#31333f','important');
           el.style.setProperty('background','transparent','important');
+          el.style.setProperty('background-color','transparent','important');
         });
-        chip.querySelectorAll('svg path,svg rect,svg circle').forEach(function(el){
-          el.style.setProperty('fill','#4a5568','important');
+
+        chip.querySelectorAll('svg').forEach(function(svg){
+          svg.style.setProperty('background','transparent','important');
+          svg.style.setProperty('background-color','transparent','important');
+          svg.querySelectorAll('path,rect,circle').forEach(function(p){
+            p.style.setProperty('fill','#4a5568','important');
+            p.style.removeProperty('fill');
+          });
+          svg.querySelectorAll('[fill="none"]').forEach(function(p){
+            p.style.setProperty('fill','none','important');
+          });
         });
       });
+
       doc.querySelectorAll('[data-testid="stFileChipDeleteBtn"]').forEach(function(btn){
-        btn.style.setProperty('background-color','#e2e6ee','important');
+        btn.style.setProperty('background-color','#e9eaf0','important');
+        btn.style.setProperty('background','#e9eaf0','important');
         btn.style.setProperty('border-radius','50%','important');
         btn.style.setProperty('border','1px solid #c0c5d0','important');
-        btn.querySelectorAll('svg path').forEach(function(s){
-          s.style.setProperty('fill','#31333f','important');
+        btn.style.setProperty('color','transparent','important');
+        btn.style.setProperty('width','20px','important');
+        btn.style.setProperty('height','20px','important');
+        btn.style.setProperty('min-width','20px','important');
+        btn.style.setProperty('display','inline-flex','important');
+        btn.style.setProperty('align-items','center','important');
+        btn.style.setProperty('justify-content','center','important');
+        btn.style.setProperty('padding','0','important');
+        btn.style.setProperty('overflow','hidden','important');
+        btn.querySelectorAll('button').forEach(function(b){
+          b.style.setProperty('background-color','transparent','important');
+          b.style.setProperty('background','transparent','important');
+          b.style.setProperty('border','none','important');
+          b.style.setProperty('padding','0','important');
+          b.style.setProperty('display','flex','important');
+          b.style.setProperty('align-items','center','important');
+          b.style.setProperty('justify-content','center','important');
+        });
+        btn.querySelectorAll('svg path').forEach(function(p){
+          p.style.setProperty('fill','#4a5568','important');
         });
         if(!btn._hooked){
           btn._hooked = true;
           btn.addEventListener('mouseenter',function(){
             btn.style.setProperty('background-color','#f87171','important');
-            btn.querySelectorAll('svg path').forEach(function(s){ s.style.setProperty('fill','#fff','important'); });
+            btn.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#fff','important'); });
           });
           btn.addEventListener('mouseleave',function(){
-            btn.style.setProperty('background-color','#e2e6ee','important');
-            btn.querySelectorAll('svg path').forEach(function(s){ s.style.setProperty('fill','#31333f','important'); });
+            btn.style.setProperty('background-color','#e9eaf0','important');
+            btn.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#4a5568','important'); });
           });
         }
       });
+
     } catch(e){}
   }
   fixChip();

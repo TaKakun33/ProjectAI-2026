@@ -78,47 +78,41 @@ p, h1, h2, h3, h4, h5, h6, li,
   border-color: #d0d3db !important;
 }
 
-/* ── SEMBUNYIKAN LOGO/ICON di sebelah nama file ── */
-[data-testid="stFileUploaderFile"] > div > div:first-child,
-[data-testid="stFileUploaderFileData"] > div:first-child,
+/* Sembunyikan thumbnail/icon bawaan yang dark */
+[data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileData"] > div:first-child,
+[data-testid="stFileUploaderFile"] img,
 [data-testid="stFileUploaderFile"] [class*="thumb"],
-[data-testid="stFileUploaderFile"] [class*="Thumb"],
 [data-testid="stFileUploaderFile"] [class*="preview"],
-[data-testid="stFileUploaderFile"] [class*="Preview"],
-[data-testid="stFileUploaderFile"] img {
-  display: none !important;
+[data-testid="stFileUploaderFile"] > div > div:first-child > div:first-child {
+  background-color: #e8edf5 !important;
+  border-radius: 6px !important;
+}
+/* Paksa semua SVG di area file pill jadi abu gelap */
+[data-testid="stFileUploaderFile"] svg,
+[data-testid="stFileUploaderFile"] svg path,
+[data-testid="stFileUploaderFile"] svg rect {
+  fill: #4a5568 !important;
+  color: #4a5568 !important;
+  background: transparent !important;
+}
+/* Sembunyikan background gelap di wrapper icon */
+[data-testid="stFileUploaderFile"] > div > div:first-child {
+  background-color: #eef1f7 !important;
+  border-radius: 6px !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-/* ── TOMBOL X HAPUS FILE — selalu terlihat jelas di kedua mode ── */
-[data-testid="stFileUploaderDeleteBtn"] {
-  background-color: #e2e6ee !important;
+/* Tombol X hapus file */
+[data-testid="stFileUploaderDeleteBtn"],
+[data-testid="stFileUploaderDeleteBtn"] * {
+  background-color: #f0f2f6 !important;
+  color: #31333f !important;
   border-radius: 50% !important;
-  border: 1px solid #c0c5d0 !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  padding: 0 !important;
-}
-[data-testid="stFileUploaderDeleteBtn"]:hover {
-  background-color: #f87171 !important;
-  border-color: #ef4444 !important;
 }
 [data-testid="stFileUploaderDeleteBtn"] svg,
-[data-testid="stFileUploaderDeleteBtn"] svg path,
-[data-testid="stFileUploaderDeleteBtn"] * {
+[data-testid="stFileUploaderDeleteBtn"] svg path {
   fill: #31333f !important;
-  color: #31333f !important;
-  background-color: transparent !important;
-}
-[data-testid="stFileUploaderDeleteBtn"]:hover svg,
-[data-testid="stFileUploaderDeleteBtn"]:hover svg path {
-  fill: #ffffff !important;
 }
 
 /* Icon di dropzone */
@@ -959,62 +953,52 @@ st.caption(
 )
 uploaded_file = st.file_uploader("Pilih file .csv", type=["csv"])
 
-# JS fix: sembunyikan icon file & paksa tombol X selalu terlihat
+# JS fix: paksa file pill selalu light mode via components.html
 components.html("""<script>
 (function(){
   function fixFilePill(){
     try {
       var doc = window.parent.document;
-
-      // 1. Paksa seluruh file pill jadi putih bersih
-      var pills = doc.querySelectorAll('[data-testid="stFileUploaderFile"]');
-      pills.forEach(function(pill){
-        pill.style.setProperty('background-color','#ffffff','important');
-        pill.style.setProperty('border','1px solid #d0d3db','important');
-        pill.style.setProperty('border-radius','8px','important');
-        pill.style.setProperty('box-shadow','none','important');
-        pill.style.setProperty('color','#31333f','important');
-
-        // 2. Sembunyikan child pertama (icon/logo thumbnail)
-        var firstDiv = pill.querySelector('div > div:first-child');
-        if(firstDiv){
-          firstDiv.style.setProperty('display','none','important');
-        }
-
-        // 3. Paksa semua child lain jadi putih
-        pill.querySelectorAll('*').forEach(function(c){
+      var targets = doc.querySelectorAll(
+        '[data-testid="stFileUploaderFile"], ' +
+        '[data-testid="stFileUploaderFileData"], ' +
+        '[data-testid="stFileUploader"] [class*="uploadedFile"], ' +
+        '[data-testid="stFileUploader"] [class*="UploadedFile"]'
+      );
+      targets.forEach(function(el){
+        // Paksa semua elemen dan child-nya jadi putih/terang
+        el.style.setProperty('background-color','#ffffff','important');
+        el.style.setProperty('background','#ffffff','important');
+        el.style.setProperty('border','1px solid #d0d3db','important');
+        el.style.setProperty('border-radius','8px','important');
+        el.style.setProperty('box-shadow','none','important');
+        el.style.setProperty('color','#31333f','important');
+        el.querySelectorAll('*').forEach(function(c){
           var bg = window.parent.getComputedStyle(c).backgroundColor;
           var m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+          // Jika background gelap → paksa putih/abu terang
           if(m && (+m[1]+ +m[2]+ +m[3]) < 200){
-            c.style.setProperty('background-color','#ffffff','important');
+            c.style.setProperty('background-color','#f0f2f6','important');
+            c.style.setProperty('background','#f0f2f6','important');
           }
           c.style.setProperty('color','#31333f','important');
+          // SVG fill
+          if(c.tagName === 'svg' || c.tagName === 'path' || c.tagName === 'rect'){
+            c.style.setProperty('fill','#4a5568','important');
+          }
         });
       });
-
-      // 4. Fix tombol X hapus file — selalu bulat, abu terang, ikon gelap
-      var delBtns = doc.querySelectorAll('[data-testid="stFileUploaderDeleteBtn"]');
-      delBtns.forEach(function(btn){
-        btn.style.setProperty('background-color','#e2e6ee','important');
-        btn.style.setProperty('border-radius','50%','important');
-        btn.style.setProperty('border','1px solid #c0c5d0','important');
-        btn.style.setProperty('opacity','1','important');
-        btn.style.setProperty('visibility','visible','important');
-        btn.style.setProperty('display','flex','important');
-        btn.style.setProperty('width','24px','important');
-        btn.style.setProperty('height','24px','important');
-        btn.style.setProperty('min-width','24px','important');
-        btn.style.setProperty('padding','0','important');
-        btn.style.setProperty('box-shadow','none','important');
-        btn.querySelectorAll('svg, path, rect').forEach(function(s){
-          s.style.setProperty('fill','#31333f','important');
-          s.style.setProperty('background','transparent','important');
-        });
-        // Hover effect
-        btn.onmouseenter = function(){ this.style.setProperty('background-color','#f87171','important'); this.querySelectorAll('svg,path').forEach(function(s){s.style.setProperty('fill','#fff','important');}); };
-        btn.onmouseleave = function(){ this.style.setProperty('background-color','#e2e6ee','important'); this.querySelectorAll('svg,path').forEach(function(s){s.style.setProperty('fill','#31333f','important');}); };
+      // Juga target semua div/span dalam stFileUploader yang punya background gelap
+      var uploaderAll = doc.querySelectorAll('[data-testid="stFileUploader"] *');
+      uploaderAll.forEach(function(el){
+        var bg = window.parent.getComputedStyle(el).backgroundColor;
+        var m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if(m && (+m[1]+ +m[2]+ +m[3]) < 150){
+          el.style.setProperty('background-color','#f0f2f6','important');
+          el.style.setProperty('background','#f0f2f6','important');
+          el.style.setProperty('color','#31333f','important');
+        }
       });
-
     } catch(e){}
   }
   fixFilePill();

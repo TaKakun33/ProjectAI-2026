@@ -192,7 +192,7 @@ li[role="option"],
 [data-testid="stChatInput"] textarea::placeholder { color: #9ea3b0 !important; }
 [data-testid="stChatInput"] * { color: #31333f !important; }
 
-/* Chat messages */
+/* Chat messages bubble */
 [data-testid="stChatMessage"] {
   color: #31333f !important;
   background-color: #f8f9fa !important;
@@ -200,6 +200,40 @@ li[role="option"],
   border: 1px solid #e8eaef !important;
 }
 [data-testid="stChatMessage"] * { color: #31333f !important; }
+
+/* Avatar icon di chat message — paksa putih/terang */
+[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"],
+[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"],
+[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"] > div,
+[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"] > div {
+  background-color: #e8edf5 !important;
+  border: 1px solid #d0d5e0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+/* Selector generik untuk semua avatar container di chat */
+[data-testid="stChatMessage"] > div:first-child > div:first-child,
+[data-testid="stChatMessage"] [class*="avatar"],
+[data-testid="stChatMessage"] [class*="Avatar"] {
+  background-color: #e8edf5 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+/* Tombol Hapus Riwayat Chat — paksa light mode */
+[data-testid="baseButton-secondary"],
+button[kind="secondary"] {
+  background-color: #f0f2f6 !important;
+  color: #31333f !important;
+  border: 1px solid #d0d3db !important;
+  box-shadow: none !important;
+}
+[data-testid="baseButton-secondary"]:hover,
+button[kind="secondary"]:hover {
+  background-color: #e2e6ee !important;
+  color: #1a1c23 !important;
+  border-color: #b0b5c0 !important;
+}
 
 /* Alert / info box */
 [data-testid="stAlert"][data-baseweb="notification"] {

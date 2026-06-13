@@ -986,42 +986,53 @@ components.html("""<script>
         });
       });
 
-      doc.querySelectorAll('[data-testid="stFileChipDeleteBtn"]').forEach(function(btn){
-        btn.style.setProperty('background-color','#e9eaf0','important');
-        btn.style.setProperty('background','#e9eaf0','important');
-        btn.style.setProperty('border-radius','50%','important');
-        btn.style.setProperty('border','1px solid #c0c5d0','important');
-        btn.style.setProperty('color','transparent','important');
-        btn.style.setProperty('width','20px','important');
-        btn.style.setProperty('height','20px','important');
-        btn.style.setProperty('min-width','20px','important');
-        btn.style.setProperty('display','inline-flex','important');
-        btn.style.setProperty('align-items','center','important');
-        btn.style.setProperty('justify-content','center','important');
-        btn.style.setProperty('padding','0','important');
-        btn.style.setProperty('overflow','hidden','important');
-        btn.querySelectorAll('button').forEach(function(b){
-          b.style.setProperty('background-color','transparent','important');
-          b.style.setProperty('background','transparent','important');
-          b.style.setProperty('border','none','important');
-          b.style.setProperty('padding','0','important');
-          b.style.setProperty('display','flex','important');
-          b.style.setProperty('align-items','center','important');
-          b.style.setProperty('justify-content','center','important');
+      doc.querySelectorAll('[data-testid="stFileChipDeleteBtn"]').forEach(function(wrap){
+        wrap.style.setProperty('background','transparent','important');
+        wrap.style.setProperty('background-color','transparent','important');
+        wrap.style.setProperty('border','none','important');
+        wrap.style.setProperty('box-shadow','none','important');
+        wrap.style.setProperty('padding','0','important');
+        wrap.style.setProperty('color','transparent','important');
+
+        wrap.querySelectorAll('button').forEach(function(btn){
+          btn.style.setProperty('background-color','#e9eaf0','important');
+          btn.style.setProperty('background','#e9eaf0','important');
+          btn.style.setProperty('border-radius','50%','important');
+          btn.style.setProperty('border','1px solid #c0c5d0','important');
+          btn.style.setProperty('width','20px','important');
+          btn.style.setProperty('height','20px','important');
+          btn.style.setProperty('min-width','20px','important');
+          btn.style.setProperty('display','flex','important');
+          btn.style.setProperty('align-items','center','important');
+          btn.style.setProperty('justify-content','center','important');
+          btn.style.setProperty('padding','0','important');
+          btn.style.setProperty('box-shadow','none','important');
         });
-        btn.querySelectorAll('svg path').forEach(function(p){
-          p.style.setProperty('fill','#4a5568','important');
+
+        wrap.querySelectorAll('svg').forEach(function(svg){
+          svg.removeAttribute('aria-hidden');
+          svg.style.setProperty('display','block','important');
+          svg.style.setProperty('visibility','visible','important');
+          svg.style.setProperty('background','transparent','important');
+          svg.querySelectorAll('path').forEach(function(p){
+            p.style.setProperty('fill','#4a5568','important');
+            p.style.setProperty('visibility','visible','important');
+          });
         });
-        if(!btn._hooked){
-          btn._hooked = true;
-          btn.addEventListener('mouseenter',function(){
-            btn.style.setProperty('background-color','#f87171','important');
-            btn.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#fff','important'); });
-          });
-          btn.addEventListener('mouseleave',function(){
-            btn.style.setProperty('background-color','#e9eaf0','important');
-            btn.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#4a5568','important'); });
-          });
+
+        if(!wrap._hooked){
+          wrap._hooked = true;
+          var inner = wrap.querySelector('button');
+          if(inner){
+            inner.addEventListener('mouseenter',function(){
+              inner.style.setProperty('background-color','#f87171','important');
+              wrap.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#fff','important'); });
+            });
+            inner.addEventListener('mouseleave',function(){
+              inner.style.setProperty('background-color','#e9eaf0','important');
+              wrap.querySelectorAll('svg path').forEach(function(p){ p.style.setProperty('fill','#4a5568','important'); });
+            });
+          }
         }
       });
 

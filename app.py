@@ -201,21 +201,36 @@ li[role="option"],
 }
 [data-testid="stChatMessage"] * { color: #31333f !important; }
 
-/* Avatar icon di chat message — paksa putih/terang */
-[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"],
-[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"],
-[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"] > div,
-[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"] > div {
-  background-color: #e8edf5 !important;
-  border: 1px solid #d0d5e0 !important;
+/* ── AVATAR CHAT — semua varian selector Streamlit ── */
+/* Varian testid lama */
+[data-testid="chatAvatarIcon-user"],
+[data-testid="chatAvatarIcon-assistant"],
+[data-testid="chatAvatarIcon-user"] > *,
+[data-testid="chatAvatarIcon-assistant"] > * {
+  background-color: #ffffff !important;
   border-radius: 8px !important;
   box-shadow: none !important;
+  border: 1px solid #d0d5e0 !important;
 }
-/* Selector generik untuk semua avatar container di chat */
-[data-testid="stChatMessage"] > div:first-child > div:first-child,
+/* Varian testid baru */
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessageAvatarUser"] > *,
+[data-testid="stChatMessageAvatarAssistant"] > * {
+  background-color: #ffffff !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  border: 1px solid #d0d5e0 !important;
+}
+/* Fallback generik — div pertama dalam setiap chat message (tempat avatar) */
+[data-testid="stChatMessage"] > div > div:first-child,
+[data-testid="stChatMessage"] > div > div:first-child > div,
+[data-testid="stChatMessage"] > div > div:first-child > span,
 [data-testid="stChatMessage"] [class*="avatar"],
-[data-testid="stChatMessage"] [class*="Avatar"] {
-  background-color: #e8edf5 !important;
+[data-testid="stChatMessage"] [class*="Avatar"],
+[data-testid="stChatMessage"] [class*="icon"],
+[data-testid="stChatMessage"] [class*="Icon"] {
+  background-color: #ffffff !important;
   border-radius: 8px !important;
   box-shadow: none !important;
 }
@@ -272,6 +287,40 @@ hr { border-color: #e0e0e0 !important; }
 ::-webkit-scrollbar-track { background:#f0f2f6; }
 ::-webkit-scrollbar-thumb { background:#cccccc; border-radius:3px; }
 </style>""", unsafe_allow_html=True)
+
+# JS runtime fix: paksa avatar chat selalu putih di dark maupun light mode
+st.markdown("""<script>
+(function(){
+  function fixAvatars(){
+    // Semua kemungkinan selector avatar Streamlit
+    var sel = [
+      '[data-testid="chatAvatarIcon-user"]',
+      '[data-testid="chatAvatarIcon-assistant"]',
+      '[data-testid="stChatMessageAvatarUser"]',
+      '[data-testid="stChatMessageAvatarAssistant"]',
+    ];
+    sel.forEach(function(s){
+      document.querySelectorAll(s).forEach(function(el){
+        el.style.setProperty('background-color','#ffffff','important');
+        el.style.setProperty('border','1px solid #d0d5e0','important');
+        el.style.setProperty('border-radius','8px','important');
+        el.style.setProperty('box-shadow','none','important');
+        // Child elements juga
+        Array.from(el.children).forEach(function(c){
+          c.style.setProperty('background-color','#ffffff','important');
+          c.style.setProperty('border-radius','6px','important');
+        });
+      });
+    });
+  }
+  // Jalankan berkala karena Streamlit re-render saat chat update
+  fixAvatars();
+  setInterval(fixAvatars, 500);
+  // Observer untuk tangkap DOM mutation
+  var obs = new MutationObserver(fixAvatars);
+  obs.observe(document.body, {childList:true, subtree:true});
+})();
+</script>""", unsafe_allow_html=True)
 
 # Daftar model yang direkomendasikan (Groq)
 MODEL_OPTIONS = [

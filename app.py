@@ -13,6 +13,12 @@ except ImportError:
 
 # KONFIGURASI
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
+st.markdown("""<style>
+[data-testid="stApp"]{background-color:#ffffff!important;color:#31333f!important}
+[data-testid="stSidebar"]{background-color:#f0f2f6!important}
+[data-testid="stToolbar"] button[title="Settings"]{display:none!important}
+html,body{color-scheme:light!important}
+</style>""", unsafe_allow_html=True)
 
 # Daftar model yang direkomendasikan (Groq)
 MODEL_OPTIONS = [

@@ -743,17 +743,44 @@ if uploaded_file is not None:
         st.caption("Urutan: deadline terdekat + prioritas tertinggi → kerjakan dari baris paling atas")
 
         if not df_prio.empty:
-            def warnai(row):
+            def render_tabel_html(df: pd.DataFrame, warna_fn) -> str:
+                cols = list(df.columns)
+                header = "".join(f'<th>{c}</th>' for c in cols)
+                rows_html = ""
+                for idx, row in df.iterrows():
+                    bg, fg = warna_fn(row)
+                    style = f"background:{bg};color:{fg};" if bg else ""
+                    cells = "".join(f'<td>{row[c]}</td>' for c in cols)
+                    rows_html += f'<tr style="{style}"><td style="color:#718096;width:36px">{idx}</td>{cells}</tr>'
+                return f"""<div style="overflow-x:auto;border-radius:10px;border:1px solid #2d3a52;">
+<table style="width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif;">
+<thead><tr style="background:#1a2035;color:#a0aec0;text-align:left;">
+<th style="padding:10px 8px;width:36px">#</th>
+{"".join(f'<th style="padding:10px 8px;white-space:nowrap">{c}</th>' for c in cols)}
+</tr></thead>
+<tbody>{"".join(f'<tr style="border-top:1px solid #2d3a52;{( lambda b,f: f"background:{b};color:{f};" if b else "" )(*warna_fn(row))}">' + f'<td style="padding:9px 8px;color:#718096">{idx}</td>' + "".join(f'<td style="padding:9px 8px">{row[c]}</td>' for c in cols) + "</tr>" for idx, row in df.iterrows())}
+</tbody></table></div>"""
+
+            def warna_prio(row):
                 u = row.get("Urgensi","")
-                if "Terlambat" in u or "Kritis" in u: return ["background-color:#3d1515;color:#fc8181"]*len(row)
-                elif "Mendesak" in u:                 return ["background-color:#3d2a00;color:#f6ad55"]*len(row)
-                elif "Perhatikan" in u:               return ["background-color:#2a2d00;color:#f6e05e"]*len(row)
-                else:                                 return ["background-color:#0f2d1a;color:#68d391"]*len(row)
-            st.dataframe(
-                df_prio.style.apply(warnai, axis=1),
-                use_container_width=True,
-                height=min(60 + len(df_prio)*38, 400),
-            )
+                if "Terlambat" in u or "Kritis" in u: return "#3d1515","#fc8181"
+                elif "Mendesak" in u:                 return "#3d2a00","#f6ad55"
+                elif "Perhatikan" in u:               return "#2a2d00","#f6e05e"
+                else:                                 return "#0f2d1a","#68d391"
+
+            cols_p = list(df_prio.columns)
+            header_p = "".join(f'<th style="padding:10px 8px;white-space:nowrap">{c}</th>' for c in cols_p)
+            rows_p = ""
+            for idx, row in df_prio.iterrows():
+                bg, fg = warna_prio(row)
+                cells = "".join(f'<td style="padding:9px 8px">{row[c]}</td>' for c in cols_p)
+                rows_p += f'<tr style="border-top:1px solid #2d3a52;background:{bg};color:{fg};"><td style="padding:9px 8px;color:#718096;width:36px">{idx}</td>{cells}</tr>'
+            html_prio = f"""<div style="overflow-x:auto;border-radius:10px;border:1px solid #2d3a52;">
+<table style="width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif;">
+<thead><tr style="background:#1a2035;color:#a0aec0;text-align:left;">
+<th style="padding:10px 8px;width:36px">#</th>{header_p}
+</tr></thead><tbody>{rows_p}</tbody></table></div>"""
+            st.markdown(html_prio, unsafe_allow_html=True)
         else:
             st.success("🎉 Semua tugas sudah selesai!")
 
@@ -764,20 +791,26 @@ if uploaded_file is not None:
         st.caption("Jadwal otomatis dari algoritma Python — 1 tugas per hari, diurutkan dari yang paling mendesak")
 
         if not df_jadwal.empty:
-            def warnai_jadwal(row):
+            def warna_jadwal(row):
                 c = row.get("Catatan","")
-                if "Deadline HARI INI" in c or "terlewat" in c:
-                    return ["background-color:#3d1515;color:#fc8181"]*len(row)
-                elif "🔴" in c:
-                    return ["background-color:#3d2a00;color:#f6ad55"]*len(row)
-                else:
-                    return [""]*len(row)
-            st.dataframe(
-                df_jadwal.style.apply(warnai_jadwal, axis=1),
-                use_container_width=True,
-                hide_index=True,
-                height=min(60 + len(df_jadwal)*38, 460),
-            )
+                if "Deadline HARI INI" in c or "terlewat" in c: return "#3d1515","#fc8181"
+                elif "🔴" in c:                                   return "#3d2a00","#f6ad55"
+                else:                                             return "","#c9d1d9"
+
+            cols_j = list(df_jadwal.columns)
+            header_j = "".join(f'<th style="padding:10px 8px;white-space:nowrap">{c}</th>' for c in cols_j)
+            rows_j = ""
+            for _, row in df_jadwal.iterrows():
+                bg, fg = warna_jadwal(row)
+                row_style = f"background:{bg};" if bg else ""
+                cells = "".join(f'<td style="padding:9px 8px;color:{fg}">{row[c]}</td>' for c in cols_j)
+                rows_j += f'<tr style="border-top:1px solid #2d3a52;{row_style}">{cells}</tr>'
+            html_jadwal = f"""<div style="overflow-x:auto;border-radius:10px;border:1px solid #2d3a52;">
+<table style="width:100%;border-collapse:collapse;font-size:.85rem;font-family:'Segoe UI',sans-serif;">
+<thead><tr style="background:#1a2035;color:#a0aec0;text-align:left;">
+{header_j}
+</tr></thead><tbody>{rows_j}</tbody></table></div>"""
+            st.markdown(html_jadwal, unsafe_allow_html=True)
         else:
             st.info("Tidak ada tugas aktif yang perlu dijadwalkan.")
 

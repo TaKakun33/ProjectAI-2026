@@ -14,10 +14,44 @@ except ImportError:
 # KONFIGURASI
 st.set_page_config(page_title="CogniPace AI", page_icon="🧠", layout="wide")
 st.markdown("""<style>
-[data-testid="stApp"]{background-color:#ffffff!important;color:#31333f!important}
-[data-testid="stSidebar"]{background-color:#f0f2f6!important}
-[data-testid="stToolbar"] button[title="Settings"]{display:none!important}
-html,body{color-scheme:light!important}
+html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"],
+[data-testid="stMain"], .main, .block-container {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #31333f !important;
+}
+[data-testid="stSidebar"], [data-testid="stSidebarContent"] {
+  background-color: #f0f2f6 !important;
+  color: #31333f !important;
+}
+[data-testid="stSidebar"] * { color: #31333f !important; }
+:root, [data-theme="dark"], [data-theme="light"] {
+  --background-color: #ffffff !important;
+  --secondary-background-color: #f0f2f6 !important;
+  --text-color: #31333f !important;
+  --primary-color: #ff4b4b !important;
+  --font: "Source Sans Pro", sans-serif !important;
+}
+.stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, li, span, label {
+  color: #31333f !important;
+}
+.stDataFrame, .stTable { background-color: #ffffff !important; }
+.stDataFrame th, .stTable th { background-color: #f0f2f6 !important; color: #31333f !important; }
+.stDataFrame td, .stTable td { color: #31333f !important; }
+[data-testid="metric-container"] { background-color: #f0f2f6 !important; }
+[data-testid="stMetric"] * { color: #31333f !important; }
+div[data-baseweb="input"] { background-color: #ffffff !important; }
+.stTextInput input, .stSelectbox select, textarea {
+  background-color: #ffffff !important;
+  color: #31333f !important;
+}
+[data-baseweb="select"] { background-color: #ffffff !important; color: #31333f !important; }
+[data-baseweb="popover"] { background-color: #ffffff !important; }
+[data-testid="stChatInput"] { background-color: #f0f2f6 !important; }
+[data-testid="stChatMessageContent"] { background-color: #f0f2f6 !important; }
+.stAlert { background-color: #f0f2f6 !important; }
+hr { border-color: #e0e0e0 !important; }
+[data-testid="stExpander"] { background-color: #f0f2f6 !important; }
 </style>""", unsafe_allow_html=True)
 
 # Daftar model yang direkomendasikan (Groq)
